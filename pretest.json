@@ -1,0 +1,149 @@
+{
+  "version": 2.0,
+  "questions": [
+    {
+      "number": 1,
+      "question": "What is the characteristic impedance (Z_0) of a transmission line?",
+      "answers": {
+        "a": "Depends only on frequency",
+        "b": "Ratio of voltage to current of a traveling wave",
+        "c": "Load impedance",
+        "d": "Source resistance"
+      },
+      "explanations": {
+        "a": "",
+        "b": "",
+        "c": "",
+        "d": ""
+      },
+      "correctAnswer": "b",
+      "difficulty": "beginner"
+    },
+    {
+      "number": 2,
+      "question": "A transmission line is called lossless when:",
+      "answers": {
+        "a": "R=G=0",
+        "b": "L=C=0",
+        "c": "R=L=0",
+        "d": "G=C=0"
+      },
+      "explanations": {
+        "a": "",
+        "b": "",
+        "c": "",
+        "d": ""
+      },
+      "correctAnswer": "a",
+      "difficulty": "beginner"
+    },
+    {
+      "number": 3,
+      "question": "The propagation constant is:",
+      "answers": {
+        "a": "α+jβ",
+        "b": "α-β",
+        "c": "R+L",
+        "d": "G+C"
+      },
+      "explanations": {
+        "a": "",
+        "b": "",
+        "c": "",
+        "d": ""
+      },
+      "correctAnswer": "a",
+      "difficulty": "beginner"
+    },
+    {
+      "number": 4,
+      "question": "The phase constant β is related to wavelength by:",
+      "answers": {
+        "a": "β=λ/2",
+        "b": "β=2π/λ",
+        "c": "β=λ/π",
+        "d": "β=1/λ^2"
+      },
+      "explanations": {
+        "a": "",
+        "b": "",
+        "c": "",
+        "d": ""
+      },
+      "correctAnswer": "b",
+      "difficulty": "beginner"
+    },
+    {
+      "number": 5,
+      "question": "Reflection occurs when:",
+      "answers": {
+        "a": "Source equals load",
+        "b": "Load impedance differs from characteristic impedance",
+        "c": "Frequency is zero",
+        "d": "Cable is very short"
+      },
+      "explanations": {
+        "a": "",
+        "b": "",
+        "c": "",
+        "d": ""
+      },
+      "correctAnswer": "b",
+      "difficulty": "beginner"
+    },
+    {
+      "number": 6,
+      "question": "The wavelength is related to frequency by:",
+      "answers": {
+        "a": "λ=f/c",
+        "b": "λ=c/f",
+        "c": "λ=cf",
+        "d": "λ=2cf"
+      },
+      "explanations": {
+        "a": "",
+        "b": "",
+        "c": "",
+        "d": ""
+      },
+      "correctAnswer": "b",
+      "difficulty": "beginner"
+    },
+    {
+      "number": 7,
+      "question": "In a dielectric medium, wave velocity is:",
+      "answers": {
+        "a": "Greater than c",
+        "b": "Equal to infinity",
+        "c": "Less than c",
+        "d": "Zero"
+      },
+      "explanations": {
+        "a": "",
+        "b": "",
+        "c": "",
+        "d": ""
+      },
+      "correctAnswer": "c",
+      "difficulty": "beginner"
+    },
+    {
+      "number": 8,
+      "question": "Relative permittivity mainly affects:",
+      "answers": {
+        "a": "Wave velocity",
+        "b": "Resistance",
+        "c": "Current",
+        "d": "Voltage"
+      },
+      "explanations": {
+        "a": "",
+        "b": "",
+        "c": "",
+        "d": ""
+      },
+      "correctAnswer": "a",
+      "difficulty": "beginner"
+    }
+  ]
+}
