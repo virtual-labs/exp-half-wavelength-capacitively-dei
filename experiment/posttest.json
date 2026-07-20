@@ -2,35 +2,91 @@
   "version": 2.0,
   "questions": [
     {
-      "question": "This is a Sample Question 1?",
+      "number": 1,
+      "question": "A λ/2 microstrip resonator has an electrical length of:",
       "answers": {
-        "a": "answer1",
-        "b": "answer2",
-        "c": "answer3",
-        "d": "answer4"
+        "a": "λ/8",
+        "b": "λ/4",
+        "c": "λ/2",
+        "d": "λ"
       },
       "explanations": {
-        "a": "Explanation 1  <a href='www.google.com'>here</a>",
-        "b": "Explanation 2",
-        "c": "Explanation 2",
-        "d": "Explanation 2"
+        "a": "A λ/8 length is too short for a half-wave resonator.",
+        "b": "A λ/4 length corresponds to a quarter-wave resonator.",
+        "c": "Correct! A λ/2 microstrip resonator has an electrical length of half the guided wavelength.",
+        "d": "A full wavelength is not used for a λ/2 resonator."
       },
-      "correctAnswer": "a",
+      "correctAnswer": "c",
       "difficulty": "beginner"
     },
     {
-      "question": "This is a Sample Question 2?",
+      "number": 2,
+      "question": "The resonant length of a λ/2 microstrip resonator is approximately:",
       "answers": {
-        "a": "answer1",
-        "b": "answer2",
-        "c": "answer3",
-        "d": "answer4"
+        "a": "λ₀/2",
+        "b": "λg/2",
+        "c": "λ₀/4",
+        "d": "λg"
       },
       "explanations": {
-        "a": "Explanation 1  <a href='www.google.com'>here</a>",
-        "b": "Explanation 2",
-        "c": "Explanation 2",
-        "d": "Explanation 2"
+        "a": "The resonator length is based on the guided wavelength, not the free-space wavelength.",
+        "b": "Correct! The resonant length is approximately half of the guided wavelength (λg/2).",
+        "c": "λ₀/4 corresponds to a quarter-wave length in free space.",
+        "d": "A full guided wavelength is not required for a λ/2 resonator."
+      },
+      "correctAnswer": "b",
+      "difficulty": "beginner"
+    },
+    {
+      "number": 3,
+      "question": "The resonant frequency of a λ/2 resonator is given by:",
+      "answers": {
+        "a": "f = vₚ/L",
+        "b": "f = vₚ/2L",
+        "c": "f = 2vₚ/L",
+        "d": "f = vₚL"
+      },
+      "explanations": {
+        "a": "This expression does not represent the resonant frequency of a half-wave resonator.",
+        "b": "Correct! The resonant frequency is given by f = vp/(2L), where vp is the phase velocity and L is the resonator length.",
+        "c": "This equation overestimates the resonant frequency.",
+        "d": "Frequency is not obtained by multiplying phase velocity and length."
+      },
+      "correctAnswer": "b",
+      "difficulty": "beginner"
+    },
+    {
+      "number": 4,
+      "question": "In a microstrip resonator, the guided wavelength depends on:",
+      "answers": {
+        "a": "Source voltage",
+        "b": "Effective dielectric constant",
+        "c": "Load resistance",
+        "d": "Strip thickness only"
+      },
+      "explanations": {
+        "a": "The guided wavelength is independent of the source voltage.",
+        "b": "Correct! The guided wavelength depends on the effective dielectric constant of the substrate.",
+        "c": "Load resistance does not determine the guided wavelength.",
+        "d": "Strip thickness alone does not determine the guided wavelength."
+      },
+      "correctAnswer": "b",
+      "difficulty": "beginner"
+    },
+    {
+      "number": 5,
+      "question": "The effective dielectric constant (εeff) is:",
+      "answers": {
+        "a": "Equal to 1",
+        "b": "Equal to substrate dielectric constant",
+        "c": "Between 1 and substrate dielectric constant",
+        "d": "Always greater than substrate dielectric constant"
+      },
+      "explanations": {
+        "a": "An effective dielectric constant of 1 applies only to air.",
+        "b": "It is generally lower than the substrate dielectric constant because some fields exist in air.",
+        "c": "Correct! The effective dielectric constant lies between 1 and the substrate dielectric constant.",
+        "d": "The effective dielectric constant can never exceed the substrate dielectric constant."
       },
       "correctAnswer": "c",
       "difficulty": "beginner"
