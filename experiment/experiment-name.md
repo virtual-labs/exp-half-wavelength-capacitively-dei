@@ -1,1 +1,1 @@
-## Experiment name
+## Half Wavelength Capacitively Coupled Linear Resonator
