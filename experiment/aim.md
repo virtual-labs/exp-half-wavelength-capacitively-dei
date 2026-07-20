@@ -1,1 +1,1 @@
-### Aim of the experiment
+### To simulate the Linear Resonator
