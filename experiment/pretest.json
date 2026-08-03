@@ -3,146 +3,92 @@
   "questions": [
     {
       "number": 1,
-      "question": "What is the characteristic impedance (Z_0) of a transmission line?",
+      "question": "A λ/2 microstrip resonator has an electrical length of:",
       "answers": {
-        "a": "Depends only on frequency",
-        "b": "Ratio of voltage to current of a traveling wave",
-        "c": "Load impedance",
-        "d": "Source resistance"
+        "a": "λ/8",
+        "b": "λ/4",
+        "c": "λ/2",
+        "d": "λ"
       },
       "explanations": {
-        "a": "",
-        "b": "",
-        "c": "",
-        "d": ""
+        "a": "A λ/8 length is too short for a half-wave resonator.",
+        "b": "A λ/4 length corresponds to a quarter-wave resonator.",
+        "c": "Correct! A λ/2 microstrip resonator has an electrical length of half the guided wavelength.",
+        "d": "A full wavelength is not used for a λ/2 resonator."
+      },
+      "correctAnswer": "c",
+      "difficulty": "beginner"
+    },
+    {
+      "number": 2,
+      "question": "The resonant length of a λ/2 microstrip resonator is approximately:",
+      "answers": {
+        "a": "λ₀/2",
+        "b": "λg/2",
+        "c": "λ₀/4",
+        "d": "λg"
+      },
+      "explanations": {
+        "a": "The resonator length is based on the guided wavelength, not the free-space wavelength.",
+        "b": "Correct! The resonant length is approximately half of the guided wavelength (λg/2).",
+        "c": "λ₀/4 corresponds to a quarter-wave length in free space.",
+        "d": "A full guided wavelength is not required for a λ/2 resonator."
       },
       "correctAnswer": "b",
       "difficulty": "beginner"
     },
     {
-      "number": 2,
-      "question": "A transmission line is called lossless when:",
-      "answers": {
-        "a": "R=G=0",
-        "b": "L=C=0",
-        "c": "R=L=0",
-        "d": "G=C=0"
-      },
-      "explanations": {
-        "a": "",
-        "b": "",
-        "c": "",
-        "d": ""
-      },
-      "correctAnswer": "a",
-      "difficulty": "beginner"
-    },
-    {
       "number": 3,
-      "question": "The propagation constant is:",
+      "question": "The resonant frequency of a λ/2 resonator is given by:",
       "answers": {
-        "a": "α+jβ",
-        "b": "α-β",
-        "c": "R+L",
-        "d": "G+C"
+        "a": "f = vₚ/L",
+        "b": "f = vₚ/2L",
+        "c": "f = 2vₚ/L",
+        "d": "f = vₚL"
       },
       "explanations": {
-        "a": "",
-        "b": "",
-        "c": "",
-        "d": ""
+        "a": "This expression does not represent the resonant frequency of a half-wave resonator.",
+        "b": "Correct! The resonant frequency is given by f = vp/(2L), where vp is the phase velocity and L is the resonator length.",
+        "c": "This equation overestimates the resonant frequency.",
+        "d": "Frequency is not obtained by multiplying phase velocity and length."
       },
-      "correctAnswer": "a",
+      "correctAnswer": "b",
       "difficulty": "beginner"
     },
     {
       "number": 4,
-      "question": "The phase constant β is related to wavelength by:",
+      "question": "In a microstrip resonator, the guided wavelength depends on:",
       "answers": {
-        "a": "β=λ/2",
-        "b": "β=2π/λ",
-        "c": "β=λ/π",
-        "d": "β=1/λ^2"
+        "a": "Source voltage",
+        "b": "Effective dielectric constant",
+        "c": "Load resistance",
+        "d": "Strip thickness only"
       },
       "explanations": {
-        "a": "",
-        "b": "",
-        "c": "",
-        "d": ""
+        "a": "The guided wavelength is independent of the source voltage.",
+        "b": "Correct! The guided wavelength depends on the effective dielectric constant of the substrate.",
+        "c": "Load resistance does not determine the guided wavelength.",
+        "d": "Strip thickness alone does not determine the guided wavelength."
       },
       "correctAnswer": "b",
       "difficulty": "beginner"
     },
     {
       "number": 5,
-      "question": "Reflection occurs when:",
+      "question": "The effective dielectric constant (εeff) is:",
       "answers": {
-        "a": "Source equals load",
-        "b": "Load impedance differs from characteristic impedance",
-        "c": "Frequency is zero",
-        "d": "Cable is very short"
+        "a": "Equal to 1",
+        "b": "Equal to substrate dielectric constant",
+        "c": "Between 1 and substrate dielectric constant",
+        "d": "Always greater than substrate dielectric constant"
       },
       "explanations": {
-        "a": "",
-        "b": "",
-        "c": "",
-        "d": ""
-      },
-      "correctAnswer": "b",
-      "difficulty": "beginner"
-    },
-    {
-      "number": 6,
-      "question": "The wavelength is related to frequency by:",
-      "answers": {
-        "a": "λ=f/c",
-        "b": "λ=c/f",
-        "c": "λ=cf",
-        "d": "λ=2cf"
-      },
-      "explanations": {
-        "a": "",
-        "b": "",
-        "c": "",
-        "d": ""
-      },
-      "correctAnswer": "b",
-      "difficulty": "beginner"
-    },
-    {
-      "number": 7,
-      "question": "In a dielectric medium, wave velocity is:",
-      "answers": {
-        "a": "Greater than c",
-        "b": "Equal to infinity",
-        "c": "Less than c",
-        "d": "Zero"
-      },
-      "explanations": {
-        "a": "",
-        "b": "",
-        "c": "",
-        "d": ""
+        "a": "An effective dielectric constant of 1 applies only to air.",
+        "b": "It is generally lower than the substrate dielectric constant because some fields exist in air.",
+        "c": "Correct! The effective dielectric constant lies between 1 and the substrate dielectric constant.",
+        "d": "The effective dielectric constant can never exceed the substrate dielectric constant."
       },
       "correctAnswer": "c",
-      "difficulty": "beginner"
-    },
-    {
-      "number": 8,
-      "question": "Relative permittivity mainly affects:",
-      "answers": {
-        "a": "Wave velocity",
-        "b": "Resistance",
-        "c": "Current",
-        "d": "Voltage"
-      },
-      "explanations": {
-        "a": "",
-        "b": "",
-        "c": "",
-        "d": ""
-      },
-      "correctAnswer": "a",
       "difficulty": "beginner"
     }
   ]
