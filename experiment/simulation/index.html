@@ -134,9 +134,10 @@ body::after{content:'';position:fixed;inset:0;background-image:linear-gradient(r
 .rpx:hover{color:var(--txt)}
 
 /* S-param panel */
-#rp-sp .rpbdy{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:12px 16px;flex:1;overflow-y:auto}
+#rp-sp .rpbdy{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:12px 16px;flex:1;min-height:0;overflow-y:auto}
 #rp-sp .rpbdy::-webkit-scrollbar{width:4px}.rpbdy::-webkit-scrollbar-thumb{background:var(--bdr2)}
 .rcc{background:var(--sur);border:1px solid var(--bdr);border-radius:7px;padding:11px 13px}
+.rcc canvas{max-height:230px!important}
 .rcc h4{font-size:10px;color:var(--muted);margin-bottom:7px;font-family:var(--mono)}
 .stats{grid-column:span 2;display:grid;gap:7px}
 .st{background:var(--card);border:1px solid var(--bdr);border-radius:6px;padding:7px 9px}
@@ -161,17 +162,138 @@ body::after{content:'';position:fixed;inset:0;background-image:linear-gradient(r
 /* Smith svg */
 #smithsvg{background:#04080f;border-radius:7px;display:block;width:100%}
 </style>
+
+<style>
+/* ════════════════════════════════════════════════════════════
+   OVERRIDES — light academic theme, larger type, scroll fixes
+════════════════════════════════════════════════════════════ */
+
+/* ── Warm paper palette (replaces neon dark) ── */
+:root{
+  --bg:#f5f2ea;  --sur:#fbf9f3;  --card:#ffffff;
+  --bdr:#ddd6c5; --bdr2:#c3bba6;
+  --blue:#1d5d8a; --purple:#6d4185; --amber:#a3690a;
+  --green:#1e7a46; --red:#b03a2e;
+  --txt:#2b2925; --muted:#6e6a60; --dim:#a09a8c;
+  --mono:'Consolas','Courier New',monospace;
+}
+body{background:var(--bg);font-size:15px;
+  font-family:'Segoe UI',system-ui,-apple-system,sans-serif}
+body::after{display:none}   /* remove the sci-fi grid overlay */
+
+/* ── SCROLL FIX ─────────────────────────────────────────────
+   Concept/Formula/Design tabs all scroll; design page grows
+   naturally; sim result area keeps a fixed working height. */
+.sp{display:none;flex:1;overflow-y:auto}
+.sp.on{display:flex;flex-direction:column}
+#dsp{display:none;flex-direction:column;flex:none;min-height:0;overflow:visible}
+#dsp.on{display:flex}
+#simblk{flex:none;display:flex;flex-direction:column;overflow:visible}
+#simbdy{flex:none;position:relative;min-height:600px;overflow:hidden}
+#dpblk{flex-shrink:0}
+
+/* ── Top bar / nav ── */
+#topbar{background:#fffdf8;border-bottom:2px solid var(--bdr)}
+.logo{color:var(--blue);border-right:1px solid var(--bdr);font-size:14px}
+.tnav{font-size:13.5px;color:var(--muted)}
+.tnav.on{color:var(--blue);border-bottom-color:var(--blue)}
+#apibadge{font-size:11px}
+
+/* ── Sidebar ── */
+.sb-lbl{font-size:10px}
+.sb-item{font-size:13px;padding:9px 11px}
+.sb-item.on{background:rgba(29,93,138,.08);border-color:rgba(29,93,138,.25)}
+.sb-ic{background:rgba(0,0,0,.04)}
+.sb-item.on .sb-ic{background:rgba(29,93,138,.12)}
+
+/* ── Sub-tabs ── */
+.stab{font-size:13.5px;padding:12px 22px}
+.snum{font-size:10px;background:rgba(0,0,0,.05)}
+.stab.on .snum{background:rgba(29,93,138,.15);color:var(--blue)}
+
+/* ── Content pages: academic serif headings, bigger body ── */
+.cpg{max-width:920px;padding:30px 36px}
+.shero{background:rgba(29,93,138,.05);border-left-color:var(--blue)}
+.shero h1{font-family:Georgia,'Times New Roman',serif;font-size:25px;font-weight:600}
+.shero p{font-size:14px;line-height:1.75}
+.sh2{font-family:Georgia,serif;font-size:17.5px;margin:26px 0 12px}
+.cc{padding:16px 19px}
+.cc h3{font-size:14.5px}
+.cc p,.cc li{font-size:13.5px;line-height:1.75}
+.ib{font-size:13px;color:#8a5a08;background:rgba(163,105,10,.07)}
+.kb{font-size:13px;color:#155e36;background:rgba(30,122,70,.07);border-color:rgba(30,122,70,.25)}
+.tag{font-size:10px}
+.tb{background:rgba(29,93,138,.1)}
+.tp{background:rgba(109,65,133,.1)}
+.tg{background:rgba(30,122,70,.1)}
+.ta{background:rgba(163,105,10,.1)}
+
+/* ── Formula boxes: light background so navy symbols read well ── */
+.fb{padding:16px 19px}
+.flbl{font-size:11px}
+.feq{background:#f2efe6;border:1px solid var(--bdr);color:var(--txt);
+     font-size:14.5px;line-height:2.1;padding:14px 18px}
+.fdsc{font-size:13px;line-height:1.75}
+.vi{background:rgba(29,93,138,.05)}
+.vs{font-size:12.5px}
+.vd{font-size:11px}
+
+/* ── Design parameters: larger inputs and labels ── */
+#dphdr h3{font-size:13.5px}
+#dphdr .hint{font-size:11px}
+.dpf label{font-size:10.5px}
+.dprow input{font-size:14.5px;padding:8px 10px}
+.dpu{font-size:10.5px;background:rgba(29,93,138,.07)}
+.dph{font-size:10.5px;color:var(--dim)}
+
+/* ── Live result cards ── */
+.lvl{font-size:9.5px}
+.lvv{font-size:15.5px}
+.lvu{font-size:9.5px}
+.lvc.hi{border-color:rgba(29,93,138,.4);background:rgba(29,93,138,.05)}
+
+/* ── Simulation bar ── */
+#simbar h3{font-size:13.5px}
+.fg{font-size:12px}
+.fg input{font-size:12.5px}
+.sbtn{font-size:12.5px;padding:8px 18px}
+.sbtn-s{background:var(--blue);color:#ffffff}
+.sbtn-f{background:var(--purple);color:#ffffff}
+
+/* ── Result panels ── */
+.rptit{font-size:13.5px}
+.rpsub{font-size:11px}
+.rpx{font-size:11.5px}
+.rcc h4{font-size:12px;color:var(--muted)}
+.stl{font-size:9.5px}
+.stv{font-size:16px}
+.stu{font-size:9.5px}
+
+/* ── Field slider bar ── */
+#fdfreq{font-size:14.5px}
+#fdinfo{font-size:11.5px}
+#fdlegend{font-size:10px}
+
+/* ── Tables in concept pages ── */
+.cc table td,.cc table th{font-size:12.5px!important}
+
+/* ── Scrollbars: subtle on light ── */
+::-webkit-scrollbar{width:9px}
+::-webkit-scrollbar-thumb{background:#c9c2b0;border-radius:5px}
+::-webkit-scrollbar-thumb:hover{background:#b3ab96}
+::-webkit-scrollbar-track{background:transparent}
+
+/* ── #idle ── */
+#idle p{font-size:13.5px}
+</style>
+
 </head>
 <body>
 
 <div id="topbar">
   <div class="logo">μW</div>
   <div class="topnav">
-    <div class="tnav on" id="tn-tline" onclick="openMod('tline')"><div class="tdot"></div>Transmission Line</div>
-    <div class="tnav" id="tn-ms" onclick="openMod('ms')"><div class="tdot"></div>Microstrip</div>
-    <div class="tnav" id="tn-res" onclick="openMod('res')"><div class="tdot"></div>λ/2 Resonator</div>
-    <div class="tnav" id="tn-ring" onclick="openMod('ring')"><div class="tdot"></div>Ring Resonator</div>
-    <div class="tnav" id="tn-filt" onclick="openMod('filt')"><div class="tdot"></div>Ring Filter</div>
+    <div class="tnav on" id="tn-res" onclick="openMod('res')"><div class="tdot"></div>λ/2 Capacitively Coupled Resonator</div>
   </div>
   <div id="apibadge">● standalone</div>
 </div>
@@ -179,11 +301,7 @@ body::after{content:'';position:fixed;inset:0;background-image:linear-gradient(r
 <div id="shell">
 <div id="sidebar">
   <span class="sb-lbl">Modules</span>
-  <div class="sb-item on" id="sb-tline" onclick="openMod('tline')"><div class="sb-ic">〰</div>Transmission Line</div>
-  <div class="sb-item" id="sb-ms" onclick="openMod('ms')"><div class="sb-ic">▬</div>Microstrip</div>
-  <div class="sb-item" id="sb-res" onclick="openMod('res')"><div class="sb-ic">◎</div>λ/2 Resonator</div>
-  <div class="sb-item" id="sb-ring" onclick="openMod('ring')"><div class="sb-ic">○</div>Ring Resonator</div>
-  <div class="sb-item" id="sb-filt" onclick="openMod('filt')"><div class="sb-ic">⋈</div>Ring Filter</div>
+  <div class="sb-item on" id="sb-res" onclick="openMod('res')"><div class="sb-ic">◎</div>λ/2 Capacitively Coupled Resonator</div>
   <div class="sb-div"></div>
   <span class="sb-lbl">Reference</span>
   <div class="sb-item" onclick="openMod('why50')"><div class="sb-ic">Ω</div>Why 50 Ω?</div>
@@ -250,8 +368,8 @@ body::after{content:'';position:fixed;inset:0;background-image:linear-gradient(r
               </div>
               <div class="rpbdy">
                 <div class="stats" id="sp-stats"></div>
-                <div class="rcc"><h4>Return Loss / |S₂₁| (dB)</h4><canvas id="ch-s11" style="height:190px"></canvas></div>
-                <div class="rcc"><h4>VSWR / Group Delay</h4><canvas id="ch-vswr" style="height:190px"></canvas></div>
+                <div class="rcc"><h4>S-Parameters — |S₁₁| and |S₂₁| (dB)</h4><canvas id="ch-s11" style="height:190px"></canvas></div>
+                <div class="rcc"><h4 id="h4-vswr">VSWR</h4><canvas id="ch-vswr" style="height:190px"></canvas></div>
                 <div class="rcc"><h4>|V(z)| Standing Wave at f_center</h4><canvas id="ch-sw" style="height:190px"></canvas></div>
                 <div class="rcc"><h4>Smith Chart — impedance locus</h4><svg id="smithsvg" viewBox="0 0 300 300" style="height:220px"></svg></div>
                 <div class="rcc" id="equivcircuit-wrap" style="grid-column:span 2">
@@ -323,10 +441,10 @@ function gv(id){ return parseFloat(document.getElementById(id).value)||0; }
 /* ═══════════════════════════════════════════════════════
    CHART SETUP
 ═══════════════════════════════════════════════════════ */
-Chart.defaults.color = '#455570';
-Chart.defaults.borderColor = '#1a2035';
+Chart.defaults.color = '#5a564c';
+Chart.defaults.borderColor = '#e3dcc9';
 Chart.defaults.font.family = 'Courier New, monospace';
-Chart.defaults.font.size = 11;
+Chart.defaults.font.size = 12;
 var CH = {};
 function mkC(id, cfg){
   if(CH[id]) CH[id].destroy();
@@ -335,11 +453,11 @@ function mkC(id, cfg){
 }
 function cOpts(xt, yt){
   return {
-    responsive:true, maintainAspectRatio:false,
+    responsive:true, maintainAspectRatio:false, resizeDelay:120,
     plugins:{legend:{labels:{boxWidth:11}}},
     scales:{
-      x:{title:{display:true,text:xt,color:'#455570'},ticks:{maxTicksLimit:8}},
-      y:{title:{display:true,text:yt,color:'#455570'}}
+      x:{title:{display:true,text:xt,color:'#5a564c'},ticks:{maxTicksLimit:8}},
+      y:{title:{display:true,text:yt,color:'#5a564c'}}
     }
   };
 }
@@ -909,6 +1027,7 @@ function runSparam(){
       {label:'|S21| dB',data:S21,borderColor:'#38bdf8',borderWidth:2,pointRadius:0,tension:.2,fill:true,backgroundColor:'rgba(56,189,248,.05)'},
       {label:'|S11| dB',data:S11,borderColor:'#f87171',borderWidth:1.5,pointRadius:0,tension:.2,borderDash:[4,3]}
     ]},options:cl});
+    var _h=document.getElementById('h4-vswr'); if(_h)_h.textContent='Group Delay τ_g (ns)';
     mkC('ch-vswr',{type:'line',data:{labels:freqs.map(function(v){return v.toFixed(3);}),datasets:[
       {label:'Group delay τ_g (ns)',data:GD,borderColor:'#a78bfa',borderWidth:2,pointRadius:0,tension:.2,fill:true,backgroundColor:'rgba(167,139,250,.05)'}
     ]},options:cOpts('Frequency (GHz)','τ_g (ns)')});
@@ -944,10 +1063,11 @@ function runSparam(){
     var clo=cOpts('Frequency (GHz)','dB');
     clo.scales.y.suggestedMin=-60; clo.scales.y.suggestedMax=5;
     mkC('ch-s11',{type:'line',data:{labels:freqs.map(function(v){return v.toFixed(3);}),datasets:[
-      {label:'|S21| dB (filter response)',data:S21,borderColor:'#38bdf8',borderWidth:2.5,pointRadius:0,tension:.1,fill:true,backgroundColor:'rgba(56,189,248,.05)'},
-      {label:'|S11| dB (return loss)',data:S11,borderColor:'#f87171',borderWidth:1.5,pointRadius:0,tension:.1,borderDash:[4,3]}
+      {label:'|S\u2082\u2081| dB',data:S21,borderColor:'#38bdf8',borderWidth:2.5,pointRadius:0,tension:.1,fill:true,backgroundColor:'rgba(56,189,248,.05)'},
+      {label:'|S\u2081\u2081| dB',data:S11,borderColor:'#f87171',borderWidth:1.5,pointRadius:0,tension:.1,borderDash:[4,3]}
     ]},options:clo});
     // Group delay
+    var _h=document.getElementById('h4-vswr'); if(_h)_h.textContent='|S₂₁| linear scale';
     mkC('ch-vswr',{type:'line',data:{labels:freqs.map(function(v){return v.toFixed(3);}),datasets:[
       {label:'|S21| linear',data:S21.map(function(v){return Math.pow(10,v/20);}),borderColor:'#a78bfa',borderWidth:2,pointRadius:0,tension:.1}
     ]},options:cOpts('Frequency (GHz)','|S21| linear')});
@@ -992,6 +1112,7 @@ function runSparam(){
       {label:'|S21| dB',data:S21,borderColor:'#38bdf8',borderWidth:2,pointRadius:0,tension:.2,fill:true,backgroundColor:'rgba(56,189,248,.05)'},
       {label:'|S11| dB',data:S11,borderColor:'#f87171',borderWidth:1.5,pointRadius:0,tension:.2,borderDash:[4,3]}
     ]},options:cl});
+    var _h=document.getElementById('h4-vswr'); if(_h)_h.textContent='Group Delay (ns)';
     mkC('ch-vswr',{type:'line',data:{labels:freqs.map(function(v){return v.toFixed(3);}),datasets:[
       {label:'Group delay (ns)',data:GD,borderColor:'#a78bfa',borderWidth:2,pointRadius:0,tension:.2}
     ]},options:cOpts('Frequency (GHz)','\u03c4_g (ns)')});
@@ -1006,12 +1127,17 @@ function runSparam(){
   }
 
   // tline and microstrip
-  var s11=[],vswrA=[],locus=[];
+  var s11=[],s21=[],vswrA=[],locus=[];
   freqs.forEach(function(fi){
     var lam=c/(fi*1e9*Math.sqrt(p.er))*1e3, bl=2*Math.PI/lam*p.len*1e-3;
     var zi=zinFn(p.ZLr,p.ZLi,p.Z0,bl), g=refl(zi.r,zi.i,p.Z0);
     var gm=Math.sqrt(g.r*g.r+g.i*g.i);
-    s11.push(-20*Math.log10(Math.max(gm,1e-12)));
+    // |S11| in dB (VNA convention: negative for matched systems)
+    s11.push(20*Math.log10(Math.max(gm,1e-12)));
+    // S21: power delivered to load through mismatched termination:
+    // |S21|^2 = 1 - |Gamma|^2 (mismatch loss, lossless line)
+    var t2 = Math.max(1e-12, 1 - gm*gm);
+    s21.push(10*Math.log10(t2));
     vswrA.push(Math.min(gm<1?(1+gm)/(1-gm):20, 20));
     locus.push([g.r,g.i]);
   });
@@ -1074,12 +1200,13 @@ function runSparam(){
     st2+='</div>';
     document.getElementById('sp-stats').innerHTML=st2;
     mkC('ch-s11',{type:'line',data:{labels:freqs.map(function(v){return v.toFixed(2);}),datasets:[
-      {label:'|S\u2082\u2081| dB (insertion loss)',data:ms_s21,borderColor:'#38bdf8',borderWidth:2,pointRadius:0,tension:.2,fill:true,backgroundColor:'rgba(56,189,248,.05)'},
-      {label:'|S\u2081\u2081| dB (return loss)',data:ms_s11,borderColor:'#f87171',borderWidth:1.5,pointRadius:0,tension:.2,borderDash:[4,3]}
-    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{boxWidth:11}}},scales:{x:{title:{display:true,text:'Frequency (GHz)',color:'#455570'},ticks:{maxTicksLimit:8}},y:{title:{display:true,text:'Magnitude (dB)',color:'#455570'},suggestedMax:0}}}});
+      {label:'|S\u2082\u2081| dB',data:ms_s21,borderColor:'#38bdf8',borderWidth:2,pointRadius:0,tension:.2,fill:true,backgroundColor:'rgba(56,189,248,.05)'},
+      {label:'|S\u2081\u2081| dB',data:ms_s11,borderColor:'#f87171',borderWidth:1.5,pointRadius:0,tension:.2,borderDash:[4,3]}
+    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{boxWidth:11}}},scales:{x:{title:{display:true,text:'Frequency (GHz)',color:'#5a564c'},ticks:{maxTicksLimit:8}},y:{title:{display:true,text:'Magnitude (dB)',color:'#5a564c'},suggestedMax:0}}}});
+    var _h=document.getElementById('h4-vswr'); if(_h)_h.textContent='VSWR';
     mkC('ch-vswr',{type:'line',data:{labels:freqs.map(function(v){return v.toFixed(2);}),datasets:[
       {label:'VSWR',data:ms_vswr,borderColor:'#fbbf24',borderWidth:2,pointRadius:0,tension:.2}
-    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{boxWidth:11}}},scales:{x:{title:{display:true,text:'Frequency (GHz)',color:'#455570'},ticks:{maxTicksLimit:8}},y:{suggestedMin:1,suggestedMax:5}}}});
+    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{boxWidth:11}}},scales:{x:{title:{display:true,text:'Frequency (GHz)',color:'#5a564c'},ticks:{maxTicksLimit:8}},y:{suggestedMin:1,suggestedMax:5}}}});
     var lam_g_mid = gLam(fmid_ms, p.eref);
     drawEquivCircuit('ms',{Z0:p.Z0,eref:p.eref,len:p.len,W:p.W,h:p.h,tand:p.tand,fCenter:fmid_ms,lambdaG:lam_g_mid});
   } else {
@@ -1089,11 +1216,13 @@ function runSparam(){
     st3+='</div>';
     document.getElementById('sp-stats').innerHTML=st3;
     mkC('ch-s11',{type:'line',data:{labels:freqs.map(function(v){return v.toFixed(2);}),datasets:[
-      {label:'|S11| dB',data:s11,borderColor:'#38bdf8',borderWidth:2,pointRadius:0,tension:.2,fill:true,backgroundColor:'rgba(56,189,248,.05)'}
-    ]},options:cOpts('Frequency (GHz)','Return Loss (dB)')});
+      {label:'|S\u2081\u2081| dB',data:s11,borderColor:'#38bdf8',borderWidth:2,pointRadius:0,tension:.2,fill:false},
+      {label:'|S\u2082\u2081| dB',data:s21,borderColor:'#f87171',borderWidth:1.6,pointRadius:0,tension:.2,borderDash:[4,3]}
+    ]},options:cOpts('Frequency (GHz)','|S| (dB)')});
+    var _h=document.getElementById('h4-vswr'); if(_h)_h.textContent='VSWR';
     mkC('ch-vswr',{type:'line',data:{labels:freqs.map(function(v){return v.toFixed(2);}),datasets:[
       {label:'VSWR',data:vswrA,borderColor:'#fbbf24',borderWidth:2,pointRadius:0,tension:.2}
-    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{boxWidth:11}}},scales:{x:{title:{display:true,text:'Frequency (GHz)',color:'#455570'},ticks:{maxTicksLimit:8}},y:{suggestedMin:1,suggestedMax:8}}}});
+    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{boxWidth:11}}},scales:{x:{title:{display:true,text:'Frequency (GHz)',color:'#5a564c'},ticks:{maxTicksLimit:8}},y:{suggestedMin:1,suggestedMax:8}}}});
     drawSmith(locus,[refl(ZI0.r,ZI0.i,p.Z0).r,refl(ZI0.r,ZI0.i,p.Z0).i],[G0.r,G0.i]);
     drawEquivCircuit('tline',{Z0:p.Z0,er:p.er,len:p.len,ZLr:p.ZLr,ZLi:p.ZLi,fCenter:fmid});
   }
@@ -1217,13 +1346,23 @@ function drawField(fGHz, p){
       ctx.beginPath();ctx.moveTo(xe-2.5,resY2+strH+lH-6);ctx.lineTo(xe+2.5,resY2+strH+lH-6);ctx.lineTo(xe,resY2+strH+lH);ctx.fill();
     }
 
-    // H-field loops
-    for(var hi=0;hi<9;hi++){
-      var fr4=(hi+0.5)/9, xh=xr0+fr4*resW;
-      var localI=Math.abs(Math.cos(Math.PI*fr4))*amp;
-      var rx2=Math.max(3,localI*22);
-      ctx.strokeStyle='rgba(167,139,250,'+(Math.min(0.65,0.04+localI*0.6)).toFixed(3)+')'; ctx.lineWidth=0.9;
-      ctx.beginPath();ctx.ellipse(xh,resY2+strH+20,rx2,5,0,Math.PI,2*Math.PI);ctx.stroke();
+    // H-field loops (current is max at center of half-wave resonator)
+    // Use normalized shape so loops stay visible; overall brightness tracks resonance.
+    var bright=Math.max(0.35,Math.min(1,amp*3));  // resonance strength -> brightness
+    for(var hi=0;hi<11;hi++){
+      var fr4=(hi+0.5)/11, xh=xr0+fr4*resW;
+      var shapeI=Math.abs(Math.cos(Math.PI*fr4));   // normalized current profile 0..1
+      var rx2=6+shapeI*20;                          // 6..26 px wide, always visible
+      var op=(0.25+shapeI*0.55)*bright;             // 0.25..0.80 scaled by brightness
+      ctx.strokeStyle='rgba(167,139,250,'+op.toFixed(3)+')'; ctx.lineWidth=1.4;
+      ctx.beginPath();ctx.ellipse(xh,resY2+strH+22,rx2,7,0,Math.PI,2*Math.PI);ctx.stroke();
+      // circulation arrows on the loops to convey H-field direction
+      ctx.fillStyle='rgba(167,139,250,'+op.toFixed(3)+')';
+      ctx.beginPath();
+      ctx.moveTo(xh-rx2,resY2+strH+22);
+      ctx.lineTo(xh-rx2+4,resY2+strH+19);
+      ctx.lineTo(xh-rx2+4,resY2+strH+25);
+      ctx.fill();
     }
 
     // Port labels
@@ -1306,11 +1445,23 @@ function drawField(fGHz, p){
     ctx.beginPath();ctx.moveTo(xe2-2.5,subY+lH2-6);ctx.lineTo(xe2+2.5,subY+lH2-6);ctx.lineTo(xe2,subY+lH2);ctx.fill();
   }
 
-  for(var hi2=0;hi2<8;hi2++){
-    var frac6=(hi2+0.5)/8, xh2=sX+frac6*sW;
-    var vPt2=Vpts[Math.round(frac6*(n-1))], a4=vPt2?vPt2.Vm/maxV:1;
-    ctx.strokeStyle='rgba(167,139,250,'+(Math.min(0.65,0.08+a4*0.57)).toFixed(3)+')'; ctx.lineWidth=0.9;
-    ctx.beginPath();ctx.ellipse(xh2,gY2+3,Math.max(3,a4*20),5,0,Math.PI,2*Math.PI);ctx.stroke();
+  // H-field loops (I(z) is roughly out of phase with V(z); on a matched line
+  // |I|/Z0 has the same shape as |V|. We use the I envelope for shape and keep
+  // loops always visible so students can SEE H alongside E.)
+  for(var hi2=0;hi2<10;hi2++){
+    var frac6=(hi2+0.5)/10, xh2=sX+frac6*sW;
+    var iPt=Ipts[Math.round(frac6*(n-1))], a4=iPt?iPt.Im/maxI:0.5;
+    var op4=Math.min(0.85, 0.30+a4*0.55);
+    var rx4=8+a4*22;
+    ctx.strokeStyle='rgba(167,139,250,'+op4.toFixed(3)+')'; ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.ellipse(xh2,gY2+4,rx4,7,0,Math.PI,2*Math.PI);ctx.stroke();
+    // circulation arrow (H direction)
+    ctx.fillStyle='rgba(167,139,250,'+op4.toFixed(3)+')';
+    ctx.beginPath();
+    ctx.moveTo(xh2-rx4,gY2+4);
+    ctx.lineTo(xh2-rx4+4,gY2+1);
+    ctx.lineTo(xh2-rx4+4,gY2+7);
+    ctx.fill();
   }
 
   ctx.font='9px Courier New'; ctx.textAlign='left';
@@ -1346,7 +1497,7 @@ function drawSmith(locus, op, ZLg){
     el.setAttribute('cx',cxr); el.setAttribute('cy',cy); el.setAttribute('r',cr);
     el.setAttribute('fill','none'); el.setAttribute('stroke','#1a2840'); el.setAttribute('stroke-width','0.8');
     el.setAttribute('clip-path','url(#sc)'); svg.appendChild(el);
-    if(r>0){var t=document.createElementNS(NS,'text');t.setAttribute('x',cxr+cr-2);t.setAttribute('y',cy-3);t.setAttribute('fill','#1e3050');t.setAttribute('font-size','8');t.setAttribute('text-anchor','end');t.setAttribute('font-family','Courier New');t.textContent=r;svg.appendChild(t);}
+    if(r>0){var t=document.createElementNS(NS,'text');t.setAttribute('x',cxr+cr-2);t.setAttribute('y',cy-3);t.setAttribute('fill','#7a8ba6');t.setAttribute('font-size','8');t.setAttribute('text-anchor','end');t.setAttribute('font-family','Courier New');t.textContent=r;svg.appendChild(t);}
   });
   [0.2,0.5,1,2,5,-0.2,-0.5,-1,-2,-5].forEach(function(x){
     var cr=R/Math.abs(x), cyr=cy-Math.sign(x)*cr;
@@ -1381,7 +1532,7 @@ function drawSmith(locus, op, ZLg){
   if(op) dot(op[0],op[1],'#38bdf8','Zin');
   var lt=document.createElementNS(NS,'text');
   lt.setAttribute('x',cx); lt.setAttribute('y',cy+R+13); lt.setAttribute('text-anchor','middle');
-  lt.setAttribute('fill','#1e3050'); lt.setAttribute('font-size','8'); lt.setAttribute('font-family','Courier New');
+  lt.setAttribute('fill','#7a8ba6'); lt.setAttribute('font-size','8'); lt.setAttribute('font-family','Courier New');
   lt.textContent='\u25cf ZL (amber)  \u25cf Zin (blue)  \u2014 locus (purple)'; svg.appendChild(lt);
 }
 
@@ -1402,8 +1553,8 @@ function drawEquivCircuit(mode, params){
     if(txt !== undefined) e.textContent = txt;
     svg.appendChild(e); return e;
   }
-  function line(x1,y1,x2,y2,col,w){ el('line',{x1:x1,y1:y1,x2:x2,y2:y2,stroke:col||'#334155','stroke-width':w||1.5}); }
-  function label(x,y,txt,col,sz,anchor){ el('text',{x:x,y:y,fill:col||'#64748b','font-size':sz||9,'text-anchor':anchor||'middle','font-family':'Courier New,monospace'},txt); }
+  function line(x1,y1,x2,y2,col,w){ el('line',{x1:x1,y1:y1,x2:x2,y2:y2,stroke:col||'#8a97ad','stroke-width':w||1.5}); }
+  function label(x,y,txt,col,sz,anchor){ el('text',{x:x,y:y,fill:col||'#9aa7bd','font-size':sz||9,'text-anchor':anchor||'middle','font-family':'Courier New,monospace'},txt); }
   function resistor(x,y,lbl,val){
     // Zigzag resistor symbol
     el('rect',{x:x,y:y-12,width:40,height:24,rx:3,fill:'rgba(248,113,113,0.08)',stroke:'#f87171','stroke-width':1});
