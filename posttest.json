@@ -1,0 +1,90 @@
+{
+  "version": 2.0,
+  "questions": [
+    {
+      "question": "1. Which transmission mode is primarily supported by an ideal Coplanar Waveguide (CPW)?",
+      "answers": {
+        "a": "TE mode",
+        "b": "TM mode",
+        "c": "Quasi-TEM mode",
+        "d": "TEM only in vacuum"
+      },
+      "explanations": {
+        "a": "Incorrect. TE mode is not the primary propagation mode in a CPW.",
+        "b": "Incorrect. TM mode is not the dominant mode in an ideal CPW.",
+        "c": "Correct. An ideal Coplanar Waveguide primarily supports the quasi-TEM mode of propagation.",
+        "d": "Incorrect. A CPW does not require a vacuum to support wave propagation."
+      },
+      "correctAnswer": "c",
+      "difficulty": "beginner"
+    },
+    {
+      "question": "2. In a CPW, the signal conductor is:",
+      "answers": {
+        "a": "Sandwiched between two dielectric layers",
+        "b": "Located between two ground conductors on the same plane",
+        "c": "Placed on the bottom side of the substrate",
+        "d": "Suspended in air"
+      },
+      "explanations": {
+        "a": "Incorrect. This does not describe the structure of a coplanar waveguide.",
+        "b": "Correct. In a CPW, the center signal conductor is located between two ground conductors on the same plane.",
+        "c": "Incorrect. The signal conductor is fabricated on the top surface of the substrate.",
+        "d": "Incorrect. The conductor is supported by a dielectric substrate, not suspended in air."
+      },
+      "correctAnswer": "b",
+      "difficulty": "beginner"
+    },
+    {
+      "question": "3. A low value of |S11| (e.g., below –10 dB) indicates:",
+      "answers": {
+        "a": "Poor impedance matching",
+        "b": "Good impedance matching",
+        "c": "High insertion loss",
+        "d": "No signal transmission"
+      },
+      "explanations": {
+        "a": "Incorrect. A low |S11| value indicates less reflected power, not poor matching.",
+        "b": "Correct. An |S11| value below −10 dB generally indicates good impedance matching.",
+        "c": "Incorrect. Insertion loss is represented by S21, not S11.",
+        "d": "Incorrect. A low |S11| does not imply that signal transmission is absent."
+      },
+      "correctAnswer": "b",
+      "difficulty": "beginner"
+    },
+    {
+      "question": "4. Which S-parameter represents forward transmission?",
+      "answers": {
+        "a": "S11",
+        "b": "S12",
+        "c": "S21",
+        "d": "S22"
+      },
+      "explanations": {
+        "a": "Incorrect. S11 represents the input reflection coefficient.",
+        "b": "Incorrect. S12 represents reverse transmission.",
+        "c": "Correct. S21 represents the forward transmission from Port 1 to Port 2.",
+        "d": "Incorrect. S22 represents the output reflection coefficient."
+      },
+      "correctAnswer": "c",
+      "difficulty": "beginner"
+    },
+    {
+      "question": "5. The instrument most commonly used to measure S-parameters is:",
+      "answers": {
+        "a": "Oscilloscope",
+        "b": "Spectrum Analyzer",
+        "c": "Vector Network Analyzer (VNA)",
+        "d": "Multimeter"
+      },
+      "explanations": {
+        "a": "Incorrect. An oscilloscope measures voltage versus time, not S-parameters.",
+        "b": "Incorrect. A spectrum analyzer measures signal power versus frequency but does not directly measure S-parameters.",
+        "c": "Correct. A Vector Network Analyzer (VNA) is the standard instrument used to measure S-parameters.",
+        "d": "Incorrect. A multimeter cannot measure microwave S-parameters."
+      },
+      "correctAnswer": "c",
+      "difficulty": "beginner"
+    }
+  ]
+}
