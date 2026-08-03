@@ -2,91 +2,86 @@
   "version": 2.0,
   "questions": [
     {
-      "number": 1,
-      "question": "A λ/2 microstrip resonator has an electrical length of:",
+      "question": "1. Which transmission mode is primarily supported by an ideal Coplanar Waveguide (CPW)?",
       "answers": {
-        "a": "λ/8",
-        "b": "λ/4",
-        "c": "λ/2",
-        "d": "λ"
+        "a": "TE mode",
+        "b": "TM mode",
+        "c": "Quasi-TEM mode",
+        "d": "TEM only in vacuum"
       },
       "explanations": {
-        "a": "A λ/8 length is too short for a half-wave resonator.",
-        "b": "A λ/4 length corresponds to a quarter-wave resonator.",
-        "c": "Correct! A λ/2 microstrip resonator has an electrical length of half the guided wavelength.",
-        "d": "A full wavelength is not used for a λ/2 resonator."
+        "a": "Incorrect. TE mode is not the primary propagation mode in a CPW.",
+        "b": "Incorrect. TM mode is not the dominant mode in an ideal CPW.",
+        "c": "Correct. An ideal Coplanar Waveguide primarily supports the quasi-TEM mode of propagation.",
+        "d": "Incorrect. A CPW does not require a vacuum to support wave propagation."
       },
       "correctAnswer": "c",
       "difficulty": "beginner"
     },
     {
-      "number": 2,
-      "question": "The resonant length of a λ/2 microstrip resonator is approximately:",
+      "question": "2. In a CPW, the signal conductor is:",
       "answers": {
-        "a": "λ₀/2",
-        "b": "λg/2",
-        "c": "λ₀/4",
-        "d": "λg"
+        "a": "Sandwiched between two dielectric layers",
+        "b": "Located between two ground conductors on the same plane",
+        "c": "Placed on the bottom side of the substrate",
+        "d": "Suspended in air"
       },
       "explanations": {
-        "a": "The resonator length is based on the guided wavelength, not the free-space wavelength.",
-        "b": "Correct! The resonant length is approximately half of the guided wavelength (λg/2).",
-        "c": "λ₀/4 corresponds to a quarter-wave length in free space.",
-        "d": "A full guided wavelength is not required for a λ/2 resonator."
+        "a": "Incorrect. This does not describe the structure of a coplanar waveguide.",
+        "b": "Correct. In a CPW, the center signal conductor is located between two ground conductors on the same plane.",
+        "c": "Incorrect. The signal conductor is fabricated on the top surface of the substrate.",
+        "d": "Incorrect. The conductor is supported by a dielectric substrate, not suspended in air."
       },
       "correctAnswer": "b",
       "difficulty": "beginner"
     },
     {
-      "number": 3,
-      "question": "The resonant frequency of a λ/2 resonator is given by:",
+      "question": "3. A low value of |S11| (e.g., below –10 dB) indicates:",
       "answers": {
-        "a": "f = vₚ/L",
-        "b": "f = vₚ/2L",
-        "c": "f = 2vₚ/L",
-        "d": "f = vₚL"
+        "a": "Poor impedance matching",
+        "b": "Good impedance matching",
+        "c": "High insertion loss",
+        "d": "No signal transmission"
       },
       "explanations": {
-        "a": "This expression does not represent the resonant frequency of a half-wave resonator.",
-        "b": "Correct! The resonant frequency is given by f = vp/(2L), where vp is the phase velocity and L is the resonator length.",
-        "c": "This equation overestimates the resonant frequency.",
-        "d": "Frequency is not obtained by multiplying phase velocity and length."
+        "a": "Incorrect. A low |S11| value indicates less reflected power, not poor matching.",
+        "b": "Correct. An |S11| value below −10 dB generally indicates good impedance matching.",
+        "c": "Incorrect. Insertion loss is represented by S21, not S11.",
+        "d": "Incorrect. A low |S11| does not imply that signal transmission is absent."
       },
       "correctAnswer": "b",
       "difficulty": "beginner"
     },
     {
-      "number": 4,
-      "question": "In a microstrip resonator, the guided wavelength depends on:",
+      "question": "4. Which S-parameter represents forward transmission?",
       "answers": {
-        "a": "Source voltage",
-        "b": "Effective dielectric constant",
-        "c": "Load resistance",
-        "d": "Strip thickness only"
+        "a": "S11",
+        "b": "S12",
+        "c": "S21",
+        "d": "S22"
       },
       "explanations": {
-        "a": "The guided wavelength is independent of the source voltage.",
-        "b": "Correct! The guided wavelength depends on the effective dielectric constant of the substrate.",
-        "c": "Load resistance does not determine the guided wavelength.",
-        "d": "Strip thickness alone does not determine the guided wavelength."
+        "a": "Incorrect. S11 represents the input reflection coefficient.",
+        "b": "Incorrect. S12 represents reverse transmission.",
+        "c": "Correct. S21 represents the forward transmission from Port 1 to Port 2.",
+        "d": "Incorrect. S22 represents the output reflection coefficient."
       },
-      "correctAnswer": "b",
+      "correctAnswer": "c",
       "difficulty": "beginner"
     },
     {
-      "number": 5,
-      "question": "The effective dielectric constant (εeff) is:",
+      "question": "5. The instrument most commonly used to measure S-parameters is:",
       "answers": {
-        "a": "Equal to 1",
-        "b": "Equal to substrate dielectric constant",
-        "c": "Between 1 and substrate dielectric constant",
-        "d": "Always greater than substrate dielectric constant"
+        "a": "Oscilloscope",
+        "b": "Spectrum Analyzer",
+        "c": "Vector Network Analyzer (VNA)",
+        "d": "Multimeter"
       },
       "explanations": {
-        "a": "An effective dielectric constant of 1 applies only to air.",
-        "b": "It is generally lower than the substrate dielectric constant because some fields exist in air.",
-        "c": "Correct! The effective dielectric constant lies between 1 and the substrate dielectric constant.",
-        "d": "The effective dielectric constant can never exceed the substrate dielectric constant."
+        "a": "Incorrect. An oscilloscope measures voltage versus time, not S-parameters.",
+        "b": "Incorrect. A spectrum analyzer measures signal power versus frequency but does not directly measure S-parameters.",
+        "c": "Correct. A Vector Network Analyzer (VNA) is the standard instrument used to measure S-parameters.",
+        "d": "Incorrect. A multimeter cannot measure microwave S-parameters."
       },
       "correctAnswer": "c",
       "difficulty": "beginner"
