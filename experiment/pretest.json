@@ -3,7 +3,7 @@
   "questions": [
     {
       "number": 1,
-      "question": "A λ/2 microstrip resonator has an electrical length of:",
+      "question": "Q1. A λ/2 microstrip resonator has an electrical length of:",
       "answers": {
         "a": "λ/8",
         "b": "λ/4",
@@ -21,7 +21,7 @@
     },
     {
       "number": 2,
-      "question": "The resonant length of a λ/2 microstrip resonator is approximately:",
+      "question": "Q2. The resonant length of a λ/2 microstrip resonator is approximately:",
       "answers": {
         "a": "λ₀/2",
         "b": "λg/2",
@@ -39,7 +39,7 @@
     },
     {
       "number": 3,
-      "question": "The resonant frequency of a λ/2 resonator is given by:",
+      "question": "Q3. The resonant frequency of a λ/2 resonator is given by:",
       "answers": {
         "a": "f = vₚ/L",
         "b": "f = vₚ/2L",
@@ -57,7 +57,7 @@
     },
     {
       "number": 4,
-      "question": "In a microstrip resonator, the guided wavelength depends on:",
+      "question": "Q4. In a microstrip resonator, the guided wavelength depends on:",
       "answers": {
         "a": "Source voltage",
         "b": "Effective dielectric constant",
@@ -75,7 +75,7 @@
     },
     {
       "number": 5,
-      "question": "The effective dielectric constant (εeff) is:",
+      "question": "Q5. The effective dielectric constant (εeff) is:",
       "answers": {
         "a": "Equal to 1",
         "b": "Equal to substrate dielectric constant",
