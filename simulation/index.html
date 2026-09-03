@@ -1,0 +1,1624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Microwave Virtual Lab</title>
+<!-- Primary CDN. If this fails to load (offline lab, blocked CDN, etc.),
+     onerror below swaps in a second CDN as a fallback. If BOTH fail,
+     the app still works — see the typeof-Chart guards later in the script,
+     which keep every non-chart feature (parameters, geometry, field view,
+     equivalent circuit, formulas) fully functional and show a banner
+     instead of a blank page. -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"
+        onerror="this.onerror=null;this.src='https://unpkg.com/chart.js@4.4.0/dist/chart.umd.min.js';"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#eef2f7;      --sur:#f6f8fb;      --card:#ffffff;
+  --bdr:#dde3ec;     --bdr2:#c7d0de;
+  --blue:#1d5da8;    --blue-dk:#164a87;  --blue-lt:#eaf2fb;
+  --purple:#6d4dc7;  --purple-lt:#f1edfb;
+  --amber:#b5750a;   --amber-lt:#fbf1e0;
+  --green:#1e8a52;   --green-lt:#e8f7ef;
+  --red:#c23b3b;     --red-lt:#fbeaea;
+  --txt:#1c2536;     --muted:#63708a;    --dim:#8996ac;
+  --mono:'Consolas','Courier New',monospace;
+  --radius:12px;     --radius-sm:8px;
+  --shadow:0 1px 2px rgba(20,30,50,.04), 0 4px 16px rgba(20,30,50,.06);
+  --shadow-sm:0 1px 3px rgba(20,30,50,.06);
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--txt);font-family:'Segoe UI',system-ui,-apple-system,sans-serif;font-size:14px;min-height:100vh;line-height:1.5}
+::-webkit-scrollbar{width:9px;height:9px}
+::-webkit-scrollbar-thumb{background:#c3cbd8;border-radius:5px}
+::-webkit-scrollbar-thumb:hover{background:#aab4c6}
+::-webkit-scrollbar-track{background:transparent}
+
+/* ═══ TOPBAR ═══
+   Grid (not flex) on purpose: brand | nav | spacer as three equal-ish
+   tracks (1fr auto 1fr) means the centre nav column is centred against
+   the FULL topbar width, not just "whatever space is left after brand" —
+   so it stays centred no matter what is (or isn't) on the right side. A
+   plain flex row with margin:auto on the nav only self-centres correctly
+   when something of matching width sits on the right to balance it. */
+#topbar{background:var(--card);border-bottom:1px solid var(--bdr);display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:20px;padding:0 22px;height:64px;position:sticky;top:0;z-index:30;box-shadow:0 1px 3px rgba(20,30,50,.05)}
+.brand{display:flex;align-items:center;gap:11px;flex-shrink:0;justify-self:start}
+.brand-ic{width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,var(--blue),var(--blue-dk));display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;flex-shrink:0}
+.brand-txt h1{font-size:15px;font-weight:700;color:var(--txt);letter-spacing:-.01em}
+.brand-txt p{font-size:11px;color:var(--muted);margin-top:1px}
+.topnav{display:flex;align-items:stretch;height:100%;gap:2px;justify-self:center}
+.tnav{padding:0 18px;display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2.5px solid transparent;transition:color .15s;white-space:nowrap}
+.tnav:hover{color:var(--blue)}
+.tnav.on{color:var(--blue);border-bottom-color:var(--blue)}
+.tdot{width:6px;height:6px;border-radius:50%;background:var(--bdr2)}
+.tnav.on .tdot{background:var(--blue)}
+
+/* ═══ SHELL / SUBNAV ═══ */
+#shell{display:flex;flex-direction:column;min-height:calc(100vh - 64px)}
+#modwrap{flex:1;display:flex;flex-direction:column}
+#stabs{display:flex;gap:4px;background:var(--card);border-bottom:1px solid var(--bdr);padding:0 22px}
+.stab{padding:12px 16px;font-size:12.5px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2.5px solid transparent;transition:all .15s;display:flex;align-items:center;gap:7px;user-select:none;white-space:nowrap}
+.stab:hover{color:var(--blue)}
+.stab.on{color:var(--blue);border-bottom-color:var(--blue)}
+.snum{width:16px;height:16px;border-radius:4px;background:var(--bdr);color:var(--muted);display:flex;align-items:center;justify-content:center;font-size:9px;font-family:var(--mono);font-weight:700}
+.stab.on .snum{background:var(--blue);color:#fff}
+[style*="opacity:0.35"]{filter:grayscale(.4)}
+
+/* ═══ SUB PAGES ═══ */
+#subwrap{flex:1;display:flex;flex-direction:column}
+.sp{display:none}
+.sp.on{display:flex;flex-direction:column}
+
+/* ═══ CONCEPT / FORMULA CONTENT PAGES ═══ */
+.cpg{max-width:900px;margin:0 auto;padding:32px 24px;width:100%}
+.shero{border-left:4px solid var(--blue);padding:16px 20px;background:var(--blue-lt);border-radius:0 var(--radius-sm) var(--radius-sm) 0;margin-bottom:22px}
+.shero h1{font-family:Georgia,'Times New Roman',serif;font-size:23px;font-weight:700;color:var(--txt);margin-bottom:6px}
+.shero p{font-size:13.5px;color:var(--muted);line-height:1.75}
+.sh2{font-family:Georgia,serif;font-size:16.5px;font-weight:700;color:var(--txt);margin:24px 0 12px;display:flex;align-items:center;gap:10px}
+.sh2::after{content:'';flex:1;height:1px;background:var(--bdr)}
+.cc{background:var(--card);border:1px solid var(--bdr);border-radius:var(--radius-sm);padding:16px 18px;margin-bottom:11px;box-shadow:var(--shadow-sm)}
+.cc h3{font-size:13.5px;font-weight:700;color:var(--txt);margin-bottom:8px;display:flex;align-items:center;gap:7px}
+.cc p,.cc li{font-size:13px;color:var(--muted);line-height:1.75}
+.cc ul{padding-left:18px;margin-top:6px}
+.cc table td,.cc table th{font-size:12.5px!important;padding:4px 8px}
+.twocol{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.ib{background:var(--amber-lt);border-left:3px solid var(--amber);padding:10px 13px;border-radius:0 6px 6px 0;font-size:12.5px;color:#7a4d08;line-height:1.65;margin:11px 0}
+.kb{background:var(--green-lt);border:1px solid rgba(30,138,82,.22);border-radius:var(--radius-sm);padding:11px 14px;font-size:12.5px;color:#175f3c;line-height:1.65;margin:11px 0}
+.tag{display:inline-block;padding:2px 7px;border-radius:4px;font-size:9.5px;font-weight:700;font-family:var(--mono)}
+.tb{background:var(--blue-lt);color:var(--blue)}.tp{background:var(--purple-lt);color:var(--purple)}
+.tg{background:var(--green-lt);color:var(--green)}.ta{background:var(--amber-lt);color:var(--amber)}
+
+/* ═══ FORMULA PAGE ═══ */
+.fb{background:var(--card);border:1px solid var(--bdr);border-radius:var(--radius-sm);padding:16px 18px;margin-bottom:13px;box-shadow:var(--shadow-sm)}
+.flbl{font-size:10.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:9px;display:flex;align-items:center;gap:7px}
+.feq{background:var(--sur);border:1px solid var(--bdr);border-radius:7px;padding:14px 18px;font-family:var(--mono);font-size:13.5px;color:var(--txt);overflow-x:auto;line-height:2;margin:7px 0}
+.feq .s{color:var(--blue)}.feq .p{color:var(--purple)}.feq .g{color:var(--green)}.feq .a{color:var(--amber)}
+.fdsc{font-size:12.5px;color:var(--muted);line-height:1.75;margin-top:8px}
+.vgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.vi{background:var(--blue-lt);border:1px solid var(--bdr);border-radius:6px;padding:8px 10px}
+.vs{font-family:var(--mono);font-size:12px;color:var(--blue);font-weight:700;margin-bottom:2px}
+.vd{font-size:10.5px;color:var(--muted);line-height:1.4}
+
+/* ═══ DESIGN & SIMULATION DASHBOARD ═══ */
+#dsp{display:none;flex-direction:column;gap:18px;padding:22px;max-width:1500px;margin:0 auto;width:100%}
+#dsp.on{display:flex}
+.dash-grid{display:grid;grid-template-columns:440px 1fr;gap:18px;align-items:start}
+.col-left-charts{display:flex;flex-direction:column;gap:18px;margin-top:18px}
+.col-left-pair{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media (max-width:520px){.col-left-pair{grid-template-columns:1fr}}
+@media (max-width:1100px){.dash-grid{grid-template-columns:1fr}}
+
+/* Card base */
+.card{background:var(--card);border:1px solid var(--bdr);border-radius:var(--radius);box-shadow:var(--shadow-sm);overflow:hidden}
+.card-hdr{padding:14px 18px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:10px;background:var(--sur)}
+.card-hdr .ic{color:var(--blue);font-size:15px}
+.card-hdr h3{font-size:13.5px;font-weight:700;color:var(--txt)}
+.card-hdr .hint{font-size:11px;color:var(--muted);margin-left:2px}
+.card-body{padding:18px}
+
+/* Design params */
+#dpblk{margin-bottom:0}
+#dphdr{padding:14px 18px;background:var(--sur);display:flex;align-items:center;gap:9px;cursor:pointer;user-select:none;border-bottom:1px solid var(--bdr)}
+#dphdr h3{font-size:13.5px;font-weight:700;color:var(--txt)}
+#dphdr .hint{font-size:11px;color:var(--muted);margin-left:2px}
+#dpArr{margin-left:auto;font-size:11px;color:var(--muted)}
+#dp-reset-btn{margin-left:auto;margin-right:8px;background:var(--card);border:1px solid var(--bdr2);color:var(--txt);border-radius:7px;padding:5px 13px;font-family:inherit;font-size:11.5px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px;transition:all .15s}
+#dp-reset-btn:hover{background:var(--blue-lt);border-color:var(--blue);color:var(--blue)}
+#dpbdy{padding:16px 18px}
+/* renderMod() sets an inline grid-template-columns (4 for this module) sized
+   for a full-width layout; the redesigned left column is narrower, so this
+   pins it back to 2 columns without touching the JS that sets it. */
+#dpgrid{display:grid!important;grid-template-columns:repeat(2,1fr)!important;gap:13px}
+.dpf{min-width:0}
+.dpf label{display:block;font-size:9.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dprow{display:flex;align-items:stretch;background:var(--sur);border:1px solid var(--bdr);border-radius:8px;overflow:hidden;transition:border-color .15s;min-width:0}
+.dprow:focus-within{border-color:var(--blue);box-shadow:0 0 0 3px rgba(29,93,168,.1)}
+.dprow input{flex:1 1 auto;padding:9px 11px;background:transparent;border:none;color:var(--txt);font-family:var(--mono);font-size:14px;font-weight:600;outline:none;min-width:0;width:100%}
+.dpu{padding:0 11px;background:var(--blue-lt);border-left:1px solid var(--bdr);font-family:var(--mono);font-size:10.5px;color:var(--blue);white-space:nowrap;display:flex;align-items:center;font-weight:700;flex-shrink:0}
+.dph{font-size:10.5px;color:var(--dim);margin-top:4px;line-height:1.4;overflow-wrap:break-word}
+#param-status{margin:14px 18px;padding:9px 13px;background:var(--green-lt);border:1px solid rgba(30,138,82,.25);border-radius:7px;font-size:12px;color:#175f3c;font-weight:600;display:flex;align-items:center;gap:7px}
+#param-status.warn{background:var(--amber-lt);border-color:rgba(181,117,10,.3);color:#7a4d08}
+#param-status::before{content:'✓';font-weight:800}
+#param-status.warn::before{content:'⚠'}
+
+/* Live result mini-cards */
+#dplive{margin-top:4px}
+.dpsec-title{font-size:10.5px;font-weight:800;color:var(--blue);text-transform:uppercase;letter-spacing:.05em;margin:18px 0 9px;display:flex;align-items:center;gap:7px}
+.dpsec-title::after{content:'';flex:1;height:1px;background:var(--bdr)}
+.dpsec-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+.dpsec-grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.dpsec-grid-4 .lvc{padding:8px 8px}
+.dpsec-grid-4 .lvl{font-size:8px;letter-spacing:.02em}
+.dpsec-grid-4 .lvv{font-size:13.5px}
+.lvc{background:var(--sur);border:1px solid var(--bdr);border-radius:8px;padding:9px 11px;min-width:0}
+.lvl{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lvc.hi{border-color:rgba(29,93,168,.35);background:var(--blue-lt)}
+.lvv{font-family:var(--mono);font-size:15px;font-weight:700;color:var(--blue);margin-top:3px}
+.lvu{font-size:9px;color:var(--muted);font-weight:600}
+
+/* Live geometry (JS-injected card, matched styling) */
+#res-geo-wrap{margin:14px 18px 18px;background:#ffffff;border-radius:10px;border:1px solid var(--bdr);overflow:hidden;box-shadow:var(--shadow-sm)}
+
+/* ═══ RIGHT PANEL: sweep bar + tabs ═══ */
+.right-card{display:flex;flex-direction:column}
+#simbar{padding:13px 18px;background:var(--sur);border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+#simbar h3{font-size:12.5px;font-weight:700;color:var(--txt);margin-right:2px}
+.fg{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--muted);font-weight:600}
+.fg input{width:64px;padding:6px 8px;background:var(--card);border:1px solid var(--bdr);border-radius:6px;color:var(--txt);font-family:var(--mono);font-size:11.5px;font-weight:600;outline:none}
+.fg input:focus{border-color:var(--blue)}
+.sbtns{display:flex;gap:8px;margin-left:auto}
+.sbtn{padding:8px 15px;border-radius:8px;border:none;cursor:pointer;font-size:12px;font-weight:700;display:flex;align-items:center;gap:6px;transition:all .15s;font-family:inherit;white-space:nowrap}
+.sbtn-s{background:var(--blue);color:#fff}
+.sbtn-s.stale{box-shadow:0 0 0 3px rgba(181,117,10,.35);animation:staleGlow 1.6s ease-in-out infinite}
+@keyframes staleGlow{0%,100%{box-shadow:0 0 0 2px rgba(181,117,10,.25)}50%{box-shadow:0 0 0 5px rgba(181,117,10,.4)}}
+.sbtn-f{background:var(--purple);color:#fff}
+.sbtn:hover{opacity:.88;transform:translateY(-1px)}
+
+.right-tabs{display:flex;gap:4px;padding:10px 18px 0;background:var(--card)}
+.rtab{padding:10px 16px;font-size:12.5px;font-weight:700;color:var(--muted);cursor:pointer;border-bottom:2.5px solid transparent;transition:all .15s;display:flex;align-items:center;gap:7px;border-radius:8px 8px 0 0}
+.rtab:hover{color:var(--blue);background:var(--sur)}
+.rtab.on{color:var(--blue);border-bottom-color:var(--blue);background:var(--blue-lt)}
+
+/* Field distribution panel (in right card) */
+#rp-fd{display:flex;flex-direction:column;border-top:1px solid var(--bdr)}
+#geo-panel{border-top:1px solid var(--bdr)}
+#fdwrap{background:#ffffff;position:relative;height:170px}
+#fdcvs{display:block;width:100%;height:170px}
+#fdsbar{padding:13px 20px;background:var(--sur);border-top:1px solid var(--bdr);display:flex;align-items:center;gap:14px}
+#fdrng{flex:1;-webkit-appearance:none;height:5px;border-radius:3px;background:linear-gradient(90deg,var(--purple),var(--blue));cursor:pointer;outline:none}
+#fdrng::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:#fff;border:3px solid var(--blue);cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.25)}
+.fd-endlabel{font-size:10.5px;color:var(--muted);font-weight:600;font-family:var(--mono);white-space:nowrap}
+
+/* Field Distribution — header + mode toggle */
+.fd-head{padding:14px 20px 4px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.fd-head h3{font-size:15px;font-weight:700;color:var(--txt)}
+.fd-head p{font-size:11.5px;color:var(--muted)}
+.fd-modebar{display:flex;align-items:center;gap:6px;margin-left:auto}
+.fd-modebar>span{font-size:10.5px;font-weight:700;color:var(--muted);margin-right:2px}
+.fmode{padding:5px 12px;border-radius:7px;border:1px solid var(--bdr);background:var(--sur);font-size:11px;font-weight:700;color:var(--muted);cursor:pointer;transition:all .15s;user-select:none}
+.fmode:hover{border-color:var(--blue)}
+.fmode.on{background:var(--blue);border-color:var(--blue);color:#fff}
+
+/* Field Distribution — 2-column layout: diagram+legends (main) / frequency+summary (side) */
+.fd-2col{display:grid;grid-template-columns:1fr 300px;gap:18px;padding:14px 20px 20px;align-items:start}
+@media (max-width:1000px){.fd-2col{grid-template-columns:1fr}}
+.fd-main{display:flex;flex-direction:column;gap:14px;min-width:0}
+.fd-cvs-title{text-align:center;font-size:12.5px;font-weight:700;color:var(--blue)}
+.fd-bottom-row{display:grid;grid-template-columns:1fr 1.3fr 1fr;gap:14px}
+@media (max-width:800px){.fd-bottom-row{grid-template-columns:1fr}}
+.fd-mini-card{background:var(--sur);border:1px solid var(--bdr);border-radius:10px;padding:12px 14px}
+.fd-mini-card h5{font-size:10.5px;font-weight:700;color:var(--txt);margin-bottom:8px}
+.fd-colorbar{height:10px;border-radius:5px;background:linear-gradient(90deg,#0000aa,#0060ff,#00e0e0,#5cff5c,#ffe600,#ff7b00,#c40000)}
+.fd-colorbar-labels{display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:4px;font-weight:600}
+.fd-note{font-size:11.5px;color:var(--txt);line-height:1.6}
+.fd-mat-row{display:flex;align-items:flex-start;gap:8px;font-size:11.5px;color:var(--txt);margin-bottom:8px}
+.fd-mat-row:last-child{margin-bottom:0}
+.fd-mat-row .sw{width:11px;height:11px;border-radius:3px;margin-top:2px;flex-shrink:0}
+.fd-mat-row .sub{display:block;font-size:10px;color:var(--muted);font-weight:500}
+
+/* Field Distribution — right sidebar cards */
+.fd-side{display:flex;flex-direction:column;gap:14px}
+.fd-side .card-body{padding:16px}
+.fd-freq-toprow{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.fd-freq-lbl{font-size:11px;color:var(--muted);font-weight:600}
+.fd-f0-val{font-family:var(--mono);font-size:18px;font-weight:700;color:var(--blue);margin-top:2px}
+.fd-freq-now{text-align:right}
+.fd-freqline{display:flex;align-items:baseline;justify-content:flex-end}
+.fd-freqline #fdfreq{font-family:var(--mono);font-size:14px;font-weight:700;color:var(--txt)}
+.fd-res-badge{font-size:10.5px;font-weight:700;padding:3px 10px;border-radius:20px;background:var(--green-lt);color:var(--green);border:1px solid rgba(30,138,82,.25);display:inline-flex;align-items:center;gap:5px;margin-top:5px}
+.fd-res-badge::before{content:'\25cf';font-size:8px}
+.fd-res-badge.off{background:var(--sur);color:var(--muted);border-color:var(--bdr2)}
+.fd-summary-row{display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px solid var(--bdr)}
+.fd-summary-row:last-child{border-bottom:none}
+.fd-summary-row .ic{color:var(--blue);font-size:14px;margin-top:1px;flex-shrink:0}
+.fd-summary-row .lbl{font-size:10.5px;color:var(--muted);font-weight:600}
+.fd-summary-row .val{font-size:12.5px;font-weight:700;color:var(--txt)}
+
+/* Equivalent circuit panel (in right card) */
+#equivcircuit-wrap{padding:18px;border-top:1px solid var(--bdr)}
+#equivcircuit-wrap h4{font-size:12px;font-weight:700;color:var(--txt);margin-bottom:10px;line-height:1.5;overflow-wrap:break-word}
+#equiv-svg{background:var(--sur);border:1px solid var(--bdr);border-radius:8px}
+#equiv-vals{font-size:10.5px;color:var(--muted);font-family:var(--mono);margin-top:8px;line-height:1.9;overflow-wrap:break-word}
+
+/* ═══ RESULTS SECTION ═══ */
+.results-section{display:flex;flex-direction:column;gap:18px}
+.results-grid{display:grid;grid-template-columns:minmax(300px,1fr) 2fr;gap:18px;align-items:start}
+.rg-left{display:flex;flex-direction:column;gap:18px}
+.rg-right{display:flex;flex-direction:column;gap:14px}
+@media (max-width:1300px){.results-grid{grid-template-columns:1fr}}
+.results-row-3{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
+.results-row-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+@media (max-width:1100px){.results-row-3,.results-row-2{grid-template-columns:1fr}}
+.rcc{background:var(--card);border:1px solid var(--bdr);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow-sm);display:flex;flex-direction:column}
+.rcc canvas{max-height:230px!important}
+.rcc h4{font-size:12.5px;font-weight:700;color:var(--txt);margin-bottom:11px;font-family:inherit}
+#smithsvg{background:var(--sur);border-radius:8px;display:block;width:100%;border:1px solid var(--bdr)}
+
+/* Results summary + interpretation */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px}
+@media (max-width:900px){.stats{grid-template-columns:repeat(2,1fr)}}
+.st{background:var(--sur);border:1px solid var(--bdr);border-radius:8px;padding:10px 12px}
+.stl{font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;font-weight:700}
+.stv{font-family:var(--mono);font-size:16px;font-weight:700;color:var(--blue);margin-top:3px}
+.stu{font-size:9.5px;color:var(--muted);font-weight:600}
+.stv.p{color:var(--purple)}.stv.g{color:var(--green)}.stv.a{color:var(--amber)}.stv.r{color:var(--red)}
+#interp-card{background:var(--blue-lt);border:1px solid rgba(29,93,168,.2);border-radius:var(--radius);padding:15px 18px;font-size:12.5px;color:var(--txt);line-height:1.7;display:flex;gap:11px;align-items:flex-start}
+#interp-card .ic{color:var(--blue);font-size:16px;flex-shrink:0;margin-top:1px}
+#footer-note{text-align:center;font-size:11.5px;color:var(--muted);padding:16px 18px;background:var(--sur);border:1px solid var(--bdr);border-radius:var(--radius-sm)}
+
+/* Live geometry canvas label (kept from JS-injected markup) */
+.geo-cap{padding:10px 16px;border-bottom:1px solid var(--bdr);background:var(--sur);display:flex;align-items:baseline;gap:8px}
+.geo-cap b{font-size:12.5px;font-weight:700;color:var(--txt)}
+.geo-cap span{font-size:10.5px;color:var(--muted);font-weight:500;margin-left:2px}
+.geo-legend{padding:8px 16px;border-top:1px solid var(--bdr);background:var(--sur);display:flex;align-items:center;gap:16px;font-size:10px;color:var(--muted)}
+.geo-legend .sw{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+
+/* Idle placeholder is not used in the redesigned always-visible dashboard */
+#idle{display:none!important}
+.rp{position:static}
+
+/* ═══ RESPONSIVE ═══ */
+@media (max-width:900px){
+  .cpg{padding:20px 16px}
+  .vgrid{grid-template-columns:repeat(2,1fr)}
+  #dpgrid{grid-template-columns:1fr}
+}
+@media (max-width:600px){
+  #topbar{display:flex;flex-wrap:wrap;height:auto;padding:10px 14px;gap:10px}
+  .topnav{order:3;width:100%;justify-content:center}
+  .twocol{grid-template-columns:1fr}
+  .vgrid{grid-template-columns:1fr 1fr}
+  #dsp{padding:14px;gap:14px}
+  .dash-grid{grid-template-columns:1fr}
+  #dpgrid{grid-template-columns:1fr!important}
+  #dplive{grid-template-columns:1fr!important}
+  .dpsec-grid,.dpsec-grid-4{grid-template-columns:repeat(2,1fr)!important}
+  .results-row-3,.results-row-2{grid-template-columns:1fr!important}
+  .stats{grid-template-columns:repeat(2,1fr)!important}
+  #simbar{padding:12px 14px}
+  .sbtns{width:100%;margin-left:0}
+  .sbtn{flex:1;justify-content:center}
+}
+</style>
+
+</head>
+<body>
+
+<div id="topbar">
+  <div class="brand">
+    <div class="brand-ic">μW</div>
+    <div class="brand-txt">
+      <h1>Microwave Virtual Lab</h1>
+    </div>
+  </div>
+  <div class="topnav">
+    <div class="tnav on" id="tn-res" onclick="openMod('res')" role="button" tabindex="0" aria-label="Open module: Half-wave Capacitively Coupled Resonator"><div class="tdot"></div>λ/2 Resonator</div>
+    <div class="tnav" id="tn-why50" onclick="openMod('why50')" role="button" tabindex="0" aria-label="Open module: Why 50 ohm"><div class="tdot"></div>Why 50 Ω?</div>
+  </div>
+</div>
+
+<div id="shell">
+<div id="idle" style="display:none"><div class="ic">🔬</div><p style="font-size:12px">Set parameters, then run a simulation</p></div>
+<div id="modwrap">
+  <div id="stabs">
+    <div class="stab" id="st-concept" onclick="switchTab('concept')" role="tab" tabindex="0" aria-selected="false" aria-label="Concept tab"><div class="snum">1</div>Concept</div>
+    <div class="stab" id="st-formula" onclick="switchTab('formula')" role="tab" tabindex="0" aria-selected="false" aria-label="Formulas tab"><div class="snum">2</div>Formulas</div>
+    <div class="stab on" id="st-design" onclick="switchTab('design')" role="tab" tabindex="0" aria-selected="true" aria-label="Design and Simulation tab"><div class="snum">3</div>Design &amp; Simulation</div>
+  </div>
+  <div id="subwrap">
+
+    <!-- CONCEPT TAB -->
+    <div class="sp" id="tab-concept">
+      <div class="cpg" id="concept-body"></div>
+    </div>
+
+    <!-- FORMULA TAB -->
+    <div class="sp" id="tab-formula">
+      <div class="cpg" id="formula-body"></div>
+    </div>
+
+    <!-- DESIGN & SIM TAB -->
+    <div class="sp on" id="tab-design">
+      <div id="dsp" class="on">
+
+        <div class="dash-grid">
+
+          <!-- LEFT COLUMN: parameters + geometry -->
+          <div class="col-left">
+            <div id="dpblk" class="card">
+              <div id="dphdr" onclick="toggleDP()" role="button" tabindex="0" aria-expanded="true" aria-label="Toggle design parameters panel">
+                <span style="font-size:15px">⚙️</span>
+                <h3>Design Parameters</h3>
+                <span class="hint">type values — results update live</span>
+                <button id="dp-reset-btn" onclick="event.stopPropagation();resetDesignParams();">↺ Reset</button>
+                <span id="dpArr">▼</span>
+              </div>
+              <div id="dpbdy">
+                <div class="dpsec-title">① Input Parameters</div>
+                <div id="dpgrid"></div>
+                <div id="dplive"></div>
+              </div>
+              <div id="param-status">All parameters are within valid range.</div>
+            </div>
+          </div>
+
+          <!-- RIGHT COLUMN: sweep controls + Field Distribution / Equivalent Circuit tabs -->
+          <div class="col-right">
+            <div class="card" style="margin-bottom:18px">
+              <div id="simbar">
+                <h3>Simulation</h3>
+                <div class="fg">f<sub>start</sub> <input type="number" id="fs1" value="0.5" step="0.1" min="0.01" oninput="updateStaleBadge()" aria-label="Sweep start frequency in GHz"> GHz</div>
+                <div class="fg">f<sub>stop</sub>  <input type="number" id="fs2" value="6"   step="0.1" oninput="updateStaleBadge()" aria-label="Sweep stop frequency in GHz"> GHz</div>
+                <div class="fg">Points <input type="number" id="fpts" value="201" step="50" min="51" style="width:52px" oninput="updateStaleBadge()" aria-label="Number of sweep points"></div>
+                <span id="stale-badge" style="display:none;font-size:11px;font-weight:700;color:#7a4d08;background:var(--amber-lt);border:1px solid rgba(181,117,10,.3);border-radius:20px;padding:4px 11px;white-space:nowrap">⚠ Parameters changed — results below are outdated</span>
+                <div class="sbtns">
+                  <button class="sbtn sbtn-s" id="run-sparam-btn" onclick="runSparam()">▶ Run S-Parameters</button>
+                </div>
+              </div>
+
+              <div class="right-tabs">
+                <div class="rtab on" id="rt-geo" onclick="showRightTab('geo')" role="tab" tabindex="0" aria-selected="true">📐 Live Geometry</div>
+                <div class="rtab" id="rt-field" onclick="showRightTab('field')" role="tab" tabindex="0" aria-selected="false">📡 Field Distribution</div>
+                <div class="rtab" id="rt-equiv" onclick="showRightTab('equiv')" role="tab" tabindex="0" aria-selected="false">🔌 Equivalent Circuit</div>
+              </div>
+
+              <!-- LIVE GEOMETRY PANEL -->
+              <div id="geo-panel">
+                <!-- #res-geo-wrap is injected here by renderMod() -->
+              </div>
+
+              <!-- FIELD DISTRIBUTION PANEL -->
+              <div class="rp" id="rp-fd" style="display:none">
+                <div class="fd-head">
+                  <div>
+                    <p style="margin-top:0">Fundamental λ/2 mode of a capacitively coupled linear resonator</p>
+                  </div>
+                  <div class="fd-modebar">
+                    <span>Field Type:</span>
+                    <div class="fmode on" id="fm-E" onclick="setFieldMode('E')" role="tab" tabindex="0" aria-selected="true">Electric Field (E)</div>
+                    <div class="fmode" id="fm-H" onclick="setFieldMode('H')" role="tab" tabindex="0" aria-selected="false">Magnetic Field (H)</div>
+                  </div>
+                </div>
+
+                <div id="fdwrap">
+                  <svg id="fdcvs" style="display:block;width:100%;height:170px"></svg>
+                </div>
+                <div class="fd-bottom-row" style="grid-template-columns:1fr 1fr;padding:0 20px">
+                  <div class="fd-mini-card">
+                    <h5 id="fd-legend-title">E-field Magnitude (|E|)</h5>
+                    <div class="fd-colorbar" id="fd-colorbar"></div>
+                    <div class="fd-colorbar-labels" id="fd-colorbar-labels"><span>Low</span><span>High</span></div>
+                    <div class="fd-note" id="fd-h-note" style="display:none;margin-top:2px">Loop size and shade indicate relative current strength along the resonator.</div>
+                  </div>
+                  <div class="fd-mini-card">
+                    <h5>What you're seeing</h5>
+                    <div class="fd-note" id="fd-note">At resonance, the E-field reaches its maximum near the centre of the λ/2 resonator and approaches a minimum near the open ends.</div>
+                  </div>
+                </div>
+
+                <div class="card" style="margin:14px 20px 20px">
+                  <div class="card-body" style="padding:14px 18px">
+                    <div class="fd-freq-toprow">
+                      <div>
+                        <div class="fd-freq-lbl">Resonant Frequency</div>
+                        <div class="fd-f0-val" id="fd-f0-val">f₀ = 2.314 GHz</div>
+                      </div>
+                      <div class="fd-freq-now">
+                        <div class="fd-freqline"><span id="fdfreq">2.314 GHz</span></div>
+                        <div id="fd-resstatus" class="fd-res-badge">At resonance</div>
+                      </div>
+                    </div>
+                    <input type="range" id="fdrng" min="0" max="100" value="50" aria-label="Scan frequency across the sweep range" style="width:100%;margin-top:10px">
+                    <div style="display:flex;justify-content:space-between;margin-top:4px">
+                      <span class="fd-endlabel" id="fd-endmin">0.50 GHz</span>
+                      <span class="fd-endlabel" id="fd-endmax">6.00 GHz</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- EQUIVALENT CIRCUIT PANEL -->
+              <div id="equivcircuit-wrap" style="display:none">
+                <h4 id="equiv-title">Equivalent Circuit</h4>
+                <svg id="equiv-svg" viewBox="0 0 700 140" style="width:100%;height:170px;display:block"></svg>
+                <div id="equiv-vals"></div>
+              </div>
+            </div>
+
+            <!-- RESULTS SECTION: S11 charts only — kept inside the right
+                 column so it stacks directly under the tabs card, roughly
+                 matching the height of Design Parameters on the left. -->
+            <div class="rp" id="rp-sp">
+              <div class="rpsub" id="sp-sub" style="font-size:11px;color:var(--muted);font-weight:600"></div>
+
+              <div class="results-row-2">
+                <div class="rcc"><h4>S₁₁ Magnitude (dB)</h4><canvas id="ch-s11" style="height:200px"></canvas></div>
+                <div class="rcc"><h4>S₁₁ Phase (°)</h4><canvas id="ch-s11ph" style="height:200px"></canvas></div>
+              </div>
+            </div>
+          </div>
+
+        </div><!-- dash-grid -->
+
+        <!-- FULL-WIDTH ROW: starts right below wherever the two columns
+             above end, so Smith Chart / Group Delay / Standing Wave are
+             always horizontally aligned across the full page width. -->
+        <div class="results-row-3" style="margin-top:18px">
+          <div class="rcc"><h4>Smith Chart</h4><svg id="smithsvg" viewBox="0 0 300 300" style="height:220px"></svg></div>
+          <div class="rcc"><h4 id="h4-vswr">Group Delay (ns)</h4><canvas id="ch-vswr" style="height:180px"></canvas></div>
+          <div class="rcc"><h4>|V(z)| Standing Wave at f₀</h4><canvas id="ch-sw" style="height:180px"></canvas></div>
+        </div>
+
+        <div class="card" style="margin-top:18px">
+          <div class="card-hdr"><span class="ic">📋</span><h3>Results Summary</h3></div>
+          <div class="card-body">
+            <div class="stats" id="sp-stats"></div>
+          </div>
+        </div>
+
+        <div id="interp-card" style="margin-top:18px"><span class="ic">☆</span><div id="interp-text">Run the simulation to see the interpretation of the results.</div></div>
+
+        <div id="footer-note" style="margin-top:18px">ⓘ Results are obtained using an analytical model and validated with reference simulations.</div>
+
+      </div><!-- dsp -->
+    </div><!-- tab-design -->
+
+  </div><!-- subwrap -->
+</div><!-- modwrap -->
+</div><!-- shell -->
+
+<script>
+/* ═══════════════════════════════════════════════════════
+   PHYSICS
+═══════════════════════════════════════════════════════ */
+function msZ0(W, h, er) {
+  var u = W / h;
+  var F = u < 1 ? 1/Math.sqrt(1+12/u) + 0.04*Math.pow(1-u,2) : 1/Math.sqrt(1+12/u);
+  var eref = (er+1)/2 + (er-1)/2*F;
+  var Z0 = u <= 1
+    ? (60/Math.sqrt(eref))*Math.log(8/u + u/4)
+    : (120*Math.PI)/(Math.sqrt(eref)*(u + 1.393 + 0.667*Math.log(u+1.444)));
+  return {Z0:Z0, eref:eref};
+}
+// deriveQuantities: single source of truth for QL/BW/IL/Leq/Ceq so calcLive()
+// and runSparam() can never drift out of sync with each other.
+function deriveQuantities(p){
+  var QL = 1/(1/p.Qu+2/p.Qe);
+  var BW = p.f0/QL*1e3;
+  var IL = 20*Math.log10(Math.max(QL/p.Qe,1e-12));
+  var Leq = p.Z0/(Math.PI*p.f0*1e9)*1e9;
+  var Ceq = 1/(Math.pow(2*Math.PI*p.f0*1e9,2)*(Leq*1e-9))*1e15;
+  return {QL:QL, BW:BW, IL:IL, Leq:Leq, Ceq:Ceq};
+}
+// clampInput: runs when a design-parameter field loses focus. Snaps
+// out-of-range or non-numeric entries back to the field's min/max (visibly,
+// in the input box itself) so what the student sees always matches what the
+// simulation actually uses — entering e.g. 300 in a 0.1–20 field corrects
+// back to 20 rather than silently being clamped only inside the physics.
+function clampInput(el){
+  var min = el.hasAttribute('min') ? parseFloat(el.min) : null;
+  var max = el.hasAttribute('max') ? parseFloat(el.max) : null;
+  var v = parseFloat(el.value);
+  if(isNaN(v)){ v = (min!==null) ? min : 0; }
+  if(min!==null && v<min) v = min;
+  if(max!==null && v>max) v = max;
+  el.value = v;
+  calcLive();
+}
+function resetDesignParams(){
+  var mod = MODS[curMod];
+  if(!mod || !mod.dpFields) return;
+  mod.dpFields.forEach(function(f){
+    var el = document.getElementById(f.id);
+    if(el) el.value = f.val;
+  });
+  var e1=document.getElementById('fs1'), e2=document.getElementById('fs2'), e3=document.getElementById('fpts');
+  if(e1) e1.value = 0.5; if(e2) e2.value = 6; if(e3) e3.value = 201;
+  calcLive();
+}
+function showSimError(where, e){
+  console.error(where+' failed:', e);
+  var b = document.getElementById('sim-err-banner');
+  if(!b){
+    b = document.createElement('div');
+    b.id = 'sim-err-banner';
+    b.style.cssText = 'position:fixed;bottom:16px;left:50%;transform:translateX(-50%);'
+      +'background:#3a1a1a;border:1px solid #a33;color:#f5b5b5;padding:10px 16px;'
+      +'border-radius:6px;font-family:monospace;font-size:12px;z-index:9999;max-width:520px;'
+      +'box-shadow:0 4px 16px rgba(0,0,0,.4)';
+    document.body.appendChild(b);
+  }
+  b.textContent = '⚠ '+where+' hit an unexpected input and could not complete. Check the design parameters and try again.';
+  b.style.display = 'block';
+  clearTimeout(window._simErrTimer);
+  window._simErrTimer = setTimeout(function(){ b.style.display='none'; }, 6000);
+}
+function gv(id){ return parseFloat(document.getElementById(id).value)||0; }
+// getFreqRange: reads fs1/fs2, clamps to a sane positive range, auto-swaps if
+// fstart>fstop, and enforces a minimum span so the sweep never collapses to
+// a single flat point. Mirrors any corrected values back into the inputs so
+// the UI reflects what was actually simulated.
+function getFreqRange(){
+  var f1 = gv('fs1')||0.5, f2 = gv('fs2')||6;
+  f1 = Math.max(0.01, f1); f2 = Math.max(0.01, f2);
+  if(f1 > f2){ var t=f1; f1=f2; f2=t; }
+  if(f2 - f1 < 0.01) f2 = f1 + 0.01;
+  var e1=document.getElementById('fs1'), e2=document.getElementById('fs2');
+  if(e1) e1.value = f1; if(e2) e2.value = f2;
+  return {min:f1, max:f2};
+}
+// gv2: like gv but returns null (instead of 0) when the field is blank/non-numeric,
+// so callers can tell "user typed 0" apart from "no valid input".
+function gv2(id){
+  var el = document.getElementById(id);
+  if(!el) return null;
+  var v = parseFloat(el.value);
+  return isNaN(v) ? null : v;
+}
+
+/* ═══════════════════════════════════════════════════════
+   CHART SETUP
+═══════════════════════════════════════════════════════ */
+// CHART_OK: single source of truth for "is Chart.js actually usable".
+// Everything chart-related below checks this instead of assuming Chart
+// exists, so a failed/blocked CDN degrades gracefully (charts skipped,
+// banner shown) instead of throwing at the top level and killing every
+// function declared after it — which is what silently blanked the whole
+// dashboard before this fix.
+var CHART_OK = (typeof Chart !== 'undefined');
+if(CHART_OK){
+  Chart.defaults.color = '#5a564c';
+  Chart.defaults.borderColor = '#e3dcc9';
+  Chart.defaults.font.family = 'Courier New, monospace';
+  Chart.defaults.font.size = 12;
+}
+var chartReg = {}; // renamed from CH -> chartReg: the resonator-geometry
+                    // function below also used a local var named CH for
+                    // canvas height, silently shadowing this registry.
+                    // Different names removes that foot-gun entirely.
+function mkC(id, cfg){
+  if(!CHART_OK) return null;
+  if(chartReg[id]) chartReg[id].destroy();
+  var el = document.getElementById(id);
+  if(el) chartReg[id] = new Chart(el, cfg);
+  return chartReg[id];
+}
+function showChartUnavailableBanner(){
+  if(document.getElementById('chart-unavail-banner')) return;
+  var b = document.createElement('div');
+  b.id = 'chart-unavail-banner';
+  b.style.cssText = 'position:fixed;top:70px;left:50%;transform:translateX(-50%);'
+    +'background:#3a2a0a;border:1px solid #b5750a;color:#f5d9a5;padding:10px 16px;'
+    +'border-radius:8px;font-family:Segoe UI,sans-serif;font-size:12.5px;z-index:9999;'
+    +'max-width:520px;text-align:center;box-shadow:0 4px 16px rgba(0,0,0,.35)';
+  b.textContent = '⚠ Chart library could not be loaded (no internet / blocked CDN). '
+    +'Graphs are unavailable, but all calculated values, geometry, field view, and the '
+    +'equivalent circuit still work normally.';
+  document.body.appendChild(b);
+}
+if(!CHART_OK){ window.addEventListener('load', showChartUnavailableBanner); }
+function cOpts(xt, yt){
+  return {
+    responsive:true, maintainAspectRatio:false, resizeDelay:120,
+    plugins:{legend:{labels:{boxWidth:11}}},
+    scales:{
+      x:{title:{display:true,text:xt,color:'#5a564c'},ticks:{maxTicksLimit:8}},
+      y:{title:{display:true,text:yt,color:'#5a564c'}}
+    }
+  };
+}
+
+/* ═══════════════════════════════════════════════════════
+   MODULE CONTENT
+═══════════════════════════════════════════════════════ */
+var MODS = {
+  res:{
+    dpFields:[
+      {id:'dp-W',    lbl:'Resonator width W',         val:3.0,  unit:'mm',  hint:'Sets Z\u2080 via H-J formula', min:0.1, max:20},
+      {id:'dp-h',    lbl:'Substrate height h',         val:1.6,  unit:'mm',  hint:'Standard PCB: 1.6 mm', min:0.1, max:6},
+      {id:'dp-er',   lbl:'Permittivity \u03b5_r',      val:4.4,  unit:'\u2014',  hint:'FR4:4.4 | Rogers:3.55', min:1, max:12},
+      {id:'dp-tand', lbl:'Loss tangent tan\u03b4',     val:0.02, unit:'\u2014',  hint:'FR4:0.02 | Rogers:0.0027', min:0, max:0.05},
+      {id:'dp-L',    lbl:'Resonator length L',         val:34.3, unit:'mm',  hint:'\u2190 change this \u2192 f\u2080 updates', min:1, max:200},
+      {id:'dp-g',    lbl:'Coupling gap g',             val:0.3,  unit:'mm',  hint:'Smaller = stronger coupling', min:0.02, max:5},
+      {id:'dp-Wf',   lbl:'Feed line width W_f',        val:3.0,  unit:'mm',  hint:'Normally matched to 50\u03a9', min:0.1, max:20},
+      {id:'dp-Lf',   lbl:'Feed line length L_f',       val:10,   unit:'mm',  hint:'Port to gap distance', min:1, max:50},
+    ],
+    concept:function(){
+      return '<div class="shero"><h1>\u03bb/2 Microstrip Resonator</h1><p>A half-wavelength open-circuit resonator is a microstrip line exactly \u03bb_g/2 long. At f\u2080 it stores energy with a sharp frequency response \u2014 the fundamental building block for bandpass filters and oscillators.</p></div>'
+      + '<div class="sh2">Resonance condition</div>'
+      + '<div class="twocol">'
+      + '<div class="cc"><h3>Why \u03bb/2? <span class="tag tb">physics</span></h3><p>Open circuit at both ends forces voltage maxima at z=0 and z=L. The only standing wave satisfying this is a half-sine: L=\u03bb_g/2. Round-trip phase = 2\u03c0 \u2192 resonance.</p><div class="kb" style="margin-top:8px">f\u2080 = c\u2080 / (2\u00b7L\u00b7\u221a\u03b5_r,eff)</div></div>'
+      + '<div class="cc"><h3>Standing wave <span class="tag tp">pattern</span></h3><p>At f\u2080: voltage maxima at both open ends, voltage null at center. Current maximum at center, zero at open ends. The field distribution slider lets you watch this evolve with frequency.</p></div>'
+      + '</div>'
+      + '<div class="sh2">Coupling gap &amp; Q-factor</div>'
+      + '<div class="twocol">'
+      + '<div class="cc"><h3>Gap capacitance <span class="tag tg">coupling</span></h3><p>The coupling gap g between feed line and resonator acts as a series capacitor C_gap. It controls how much energy is coupled in and out. Smaller g \u2192 larger C_gap \u2192 stronger coupling \u2192 lower Q_ext.</p><p style="margin-top:8px">C_gap \u2248 \u03b5\u2080(1+\u03b5_r)/2 \u00b7 W/g</p></div>'
+      + '<div class="cc"><h3>Q-factor <span class="tag ta">performance</span></h3><p><strong style="color:var(--txt)">Q_u</strong> (unloaded): energy stored / energy lost inside. Set by conductor + dielectric loss. FR4: Q_u\u224850\u2013150.</p><p style="margin-top:6px"><strong style="color:var(--txt)">Q_ext</strong>: energy stored / energy coupled out. Set by coupling gap.</p><p style="margin-top:6px"><strong style="color:var(--txt)">Q_L</strong>: 1/Q_L = 1/Q_u + 2/Q_ext. BW = f\u2080/Q_L.</p></div>'
+      + '</div>'
+      + '<div class="sh2">Equivalent circuit</div>'
+      + '<div class="cc"><p>Near resonance the \u03bb/2 resonator behaves as a <strong style="color:var(--txt)">series RLC</strong> circuit:</p>'
+      + '<svg viewBox="0 0 440 80" style="width:100%;margin:10px 0;background:#040810;border-radius:6px">'
+      + '<circle cx="20" cy="40" r="4" fill="none" stroke="#fbbf24" stroke-width="1.2"/><text x="20" y="62" fill="#fbbf24" font-size="8" text-anchor="middle" font-family="Courier New">P1</text>'
+      + '<line x1="24" y1="40" x2="60" y2="40" stroke="#334155" stroke-width="1.5"/>'
+      + '<rect x="60" y="28" width="50" height="24" rx="3" fill="rgba(248,113,113,.08)" stroke="#f87171" stroke-width="1"/><text x="85" y="44" fill="#f87171" font-size="9" text-anchor="middle" font-family="Courier New">R_eq</text>'
+      + '<line x1="110" y1="40" x2="135" y2="40" stroke="#334155" stroke-width="1.5"/>'
+      + '<path d="M135,40 Q141,28 147,40 Q153,28 159,40 Q165,28 171,40 Q177,28 183,40" fill="none" stroke="#a78bfa" stroke-width="1.8"/><text x="159" y="22" fill="#a78bfa" font-size="9" text-anchor="middle" font-family="Courier New">L_eq</text>'
+      + '<line x1="183" y1="40" x2="208" y2="40" stroke="#334155" stroke-width="1.5"/>'
+      + '<line x1="208" y1="26" x2="208" y2="54" stroke="#38bdf8" stroke-width="2"/><line x1="218" y1="26" x2="218" y2="54" stroke="#38bdf8" stroke-width="2"/><text x="213" y="70" fill="#38bdf8" font-size="9" text-anchor="middle" font-family="Courier New">C_eq</text>'
+      + '<line x1="218" y1="40" x2="250" y2="40" stroke="#334155" stroke-width="1.5"/>'
+      + '<circle cx="254" cy="40" r="4" fill="none" stroke="#fbbf24" stroke-width="1.2"/><text x="254" y="62" fill="#fbbf24" font-size="8" text-anchor="middle" font-family="Courier New">P2</text>'
+      + '<text x="320" y="32" fill="#1e3050" font-size="8" font-family="Courier New">\u03bb/2 open resonator</text><text x="320" y="44" fill="#1e3050" font-size="8" font-family="Courier New">series RLC equivalent</text><text x="320" y="56" fill="#1e3050" font-size="8" font-family="Courier New">valid near f\u2080</text>'
+      + '</svg>'
+      + '<p>R_eq = Z\u2080/Q_u &nbsp; L_eq = Z\u2080/(\u03c0f\u2080) &nbsp; C_eq = 1/(\u03c9\u2080\u00b2\u00b7L_eq)</p></div>';
+    },
+    formula:function(){
+      return '<div class="shero" style="border-left-color:var(--purple)"><h1>\u03bb/2 Resonator \u2014 Formulas</h1></div>'
+      + '<div class="sh2">1 \u2014 Resonant frequency</div>'
+      + '<div class="fb"><div class="flbl"><span class="tag tb">f\u2080</span> From physical length L</div>'
+      + '<div class="feq">f\u2080 = c\u2080 / (2\u00b7L<sub>eff</sub>\u00b7\u221a\u03b5<sub>r,eff</sub>)<br><br>L<sub>eff</sub> = L + 2\u0394L<br><br>\u0394L = 0.412h\u00b7(\u03b5<sub>eff</sub>+0.3)/(\u03b5<sub>eff</sub>\u22120.258)\u00b7(W/h+0.264)/(W/h+0.8)</div>'
+      + '<div class="fdsc">\u0394L is the open-end correction (Hammerstad). The effective length is longer than the physical length due to fringing fields at the open ends.</div></div>'
+      + '<div class="sh2">2 \u2014 Coupling gap capacitance</div>'
+      + '<div class="fb"><div class="flbl"><span class="tag tg">C_gap</span> Series gap capacitor</div>'
+      + '<div class="feq">C<sub>gap</sub> \u2248 \u03b5\u2080(1+\u03b5<sub>r</sub>)/2 \u00b7 (W\u00b7t)/g</div>'
+      + '<div class="fdsc">C_gap controls Q_ext. Smaller gap g \u2192 larger C_gap \u2192 stronger coupling \u2192 lower Q_ext \u2192 wider bandwidth. t = metal (conductor) thickness, assumed 35\u00b5m (1oz Cu) in this simulator.</div></div>'
+      + '<div class="sh2">3 \u2014 Q-factors and bandwidth</div>'
+      + '<div class="fb"><div class="flbl"><span class="tag tp">Q</span> Unloaded, external, loaded</div>'
+      + '<div class="feq">1/Q<sub>L</sub> = 1/Q<sub>u</sub> + 2/Q<sub>ext</sub><br><br>Q<sub>u</sub> = \u03c0/[(\u03b1<sub>c</sub>+\u03b1<sub>d</sub>)\u00b7L<sub>eff</sub>]<br><br>Q<sub>ext</sub> = \u03c0/(2\u03c9\u2080\u00b7C<sub>gap</sub>\u00b7Z\u2080)<br><br>BW<sub>\u22123dB</sub> = f\u2080/Q<sub>L</sub></div></div>'
+      + '<div class="sh2">4 \u2014 S-parameter response</div>'
+      + '<div class="fb"><div class="flbl"><span class="tag ta">S\u2082\u2081</span> Lorentzian resonance</div>'
+      + '<div class="feq">S<sub>21</sub>(f) = (Q<sub>L</sub>/Q<sub>ext</sub>) / (1 + j\u00b72Q<sub>L</sub>\u00b7\u03b4)<br>\u03b4 = (f\u2212f\u2080)/f\u2080</div>'
+      + '<div class="fdsc">|S\u2082\u2081|_max = Q_L/Q_ext at f=f\u2080. Critical coupling: Q_ext=Q_u/2 \u2192 |S\u2082\u2081|_max = 0 dB.</div></div>'
+      + '<div class="sh2">5 \u2014 Series RLC equivalent</div>'
+      + '<div class="fb"><div class="flbl"><span class="tag tb">L_eq, C_eq, R_eq</span></div>'
+      + '<div class="feq">L<sub>eq</sub> = Z\u2080/(\u03c0f\u2080)  &nbsp;&nbsp;  C<sub>eq</sub> = 1/(\u03c9\u2080\u00b2L<sub>eq</sub>)  &nbsp;&nbsp;  R<sub>eq</sub> = Z\u2080/Q<sub>u</sub></div></div>';
+    }
+  },
+  why50:{
+    dpFields:[],
+    concept:function(){
+      return '<div class="shero"><h1>Why 50 \u03a9?</h1><p>The 50\u03a9 standard emerged in the 1940s as a compromise between two competing requirements of coaxial transmission lines.</p></div>'
+      + '<div class="sh2">The coaxial line tradeoff</div>'
+      + '<div class="twocol">'
+      + '<div class="cc"><h3>Minimum attenuation <span class="tag tb">77 \u03a9</span></h3><p>For an air-filled coax, conductor loss is minimised when b/a = e = 2.718, giving Z\u2080 = 60\u00b7ln(e) = 60\u03a9 \u2248 77\u03a9 (in air).</p></div>'
+      + '<div class="cc"><h3>Maximum power <span class="tag tg">30 \u03a9</span></h3><p>Power handling is maximised when the electric field at the inner conductor is minimised, giving b/a = e^(1/2) \u2192 Z\u2080 \u2248 30\u03a9.</p></div>'
+      + '</div>'
+      + '<div class="kb">50\u03a9 \u2248 \u221a(30 \u00d7 77) \u2014 geometric mean of the two optima. Adopted by the US military in WW2 and standardised globally.</div>'
+      + '<div class="sh2">Coaxial Z\u2080 formula</div>'
+      + '<div class="cc"><div class="feq" style="font-size:13px">Z\u2080 = (60/\u221a\u03b5<sub>r</sub>) \u00b7 ln(b/a)</div><p style="margin-top:8px;font-size:12px;color:var(--muted)">where a = inner conductor radius, b = outer conductor inner radius, \u03b5_r = dielectric permittivity.</p></div>';
+    },
+    formula:function(){ return '<div class="shero"><h1>Why 50\u03a9 \u2014 Formulas</h1></div><div class="sh2">Coaxial line Z\u2080</div><div class="fb"><div class="feq">Z\u2080 = (60/\u221a\u03b5<sub>r</sub>) \u00b7 ln(b/a)</div><div class="fdsc">Min-loss: b/a = e \u2192 Z\u2080=77\u03a9 (air). Max-power: b/a=\u221ae \u2192 Z\u2080=30\u03a9. Compromise: 50\u03a9.</div></div>'; }
+  }
+
+};
+
+/* ═══════════════════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════════════════ */
+var curMod = 'res';
+var curTab = 'design';
+var dpOpen = true;
+var fdFmin = 0.5, fdFmax = 6;
+var fdParams = {};
+var fieldMode = 'E';
+
+// STALE-RESULTS TRACKING: lastRunSig records the exact design-parameter +
+// sweep-range values that produced the S11/Smith/Results-Summary panels.
+// calcLive() (fires on every keystroke) recomputes the current signature
+// and compares it — if they differ, the student is looking at results
+// that no longer match what's in the input boxes, so we flag it instead
+// of letting it look silently up to date.
+var lastRunSig = null;
+function paramSignature(){
+  var p = getP(); if(!p) return null;
+  return JSON.stringify(p) + '|' + gv('fs1') + '|' + gv('fs2') + '|' + gv('fpts');
+}
+function updateStaleBadge(){
+  var badge = document.getElementById('stale-badge');
+  var btn = document.getElementById('run-sparam-btn');
+  if(!badge || !btn) return;
+  var stale = (lastRunSig !== null) && (paramSignature() !== lastRunSig);
+  badge.style.display = stale ? '' : 'none';
+  btn.classList.toggle('stale', stale);
+}
+
+/* ═══════════════════════════════════════════════════════
+   NAVIGATION
+═══════════════════════════════════════════════════════ */
+function openMod(id){
+  curMod = id;
+  ['res','why50'].forEach(function(m){
+    var tn = document.getElementById('tn-'+m);
+    var sb = document.getElementById('sb-'+m);
+    if(tn) tn.classList.toggle('on', m===id);
+    if(sb) sb.classList.toggle('on', m===id);
+  });
+  var stDesign = document.getElementById('st-design');
+  if(stDesign){
+    var disabled = (id !== 'res');
+    stDesign.style.opacity = disabled ? '0.35' : '';
+    stDesign.style.cursor = disabled ? 'not-allowed' : '';
+    stDesign.title = disabled ? 'Design & Simulation not available for this module' : '';
+  }
+  renderMod();
+  switchTab(curTab);
+  closeRP('rp-sp'); closeRP('rp-fd'); showIdle();
+}
+
+function switchTab(tab){
+  if(tab === 'design' && curMod !== 'res'){
+    // Design & Simulation not implemented for this module — stay on concept.
+    tab = 'concept';
+  }
+  curTab = tab;
+  ['concept','formula','design'].forEach(function(t){
+    var st = document.getElementById('st-'+t);
+    st.classList.toggle('on', t===tab);
+    st.setAttribute('aria-selected', t===tab ? 'true' : 'false');
+    document.getElementById('tab-'+t).classList.toggle('on', t===tab);
+  });
+  if(tab === 'design') calcLive();
+}
+
+// showRightTab: purely a presentational toggle between the Field Distribution
+// and Equivalent Circuit panels in the right-hand dashboard card. Does not
+// touch any simulation state — both panels keep whatever data the last
+// runField()/runSparam() call put into them.
+function showRightTab(which){
+  var geo = document.getElementById('geo-panel');
+  var fd = document.getElementById('rp-fd');
+  var eq = document.getElementById('equivcircuit-wrap');
+  var tGeo = document.getElementById('rt-geo');
+  var tField = document.getElementById('rt-field');
+  var tEquiv = document.getElementById('rt-equiv');
+  if(!fd || !eq || !geo) return;
+  geo.style.display = which === 'geo' ? 'block' : 'none';
+  fd.style.display = which === 'field' ? 'flex' : 'none';
+  eq.style.display = which === 'equiv' ? 'block' : 'none';
+  if(tGeo){ tGeo.classList.toggle('on', which==='geo'); tGeo.setAttribute('aria-selected', which==='geo'); }
+  if(tField){ tField.classList.toggle('on', which==='field'); tField.setAttribute('aria-selected', which==='field'); }
+  if(tEquiv){ tEquiv.classList.toggle('on', which==='equiv'); tEquiv.setAttribute('aria-selected', which==='equiv'); }
+  if(which === 'field') refreshFieldLive();
+}
+
+function toggleDP(){
+  dpOpen = !dpOpen;
+  document.getElementById('dpbdy').style.display = dpOpen ? '' : 'none';
+  document.getElementById('dpArr').textContent = dpOpen ? '▼' : '▶';
+  var hdr = document.getElementById('dphdr');
+  if(hdr) hdr.setAttribute('aria-expanded', dpOpen ? 'true' : 'false');
+}
+
+/* ═══════════════════════════════════════════════════════
+   RENDER MODULE
+═══════════════════════════════════════════════════════ */
+function renderMod(){
+  var mod = MODS[curMod];
+  document.getElementById('concept-body').innerHTML = mod.concept();
+  document.getElementById('formula-body').innerHTML = mod.formula();
+
+  var grid = document.getElementById('dpgrid');
+  var fields = mod.dpFields;
+  var cols = (curMod === 'res') ? 4 : 5;
+  grid.style.gridTemplateColumns = 'repeat('+cols+',1fr)';
+  grid.innerHTML = fields.map(function(f){
+    var minAttr = f.min!==undefined ? ' min="'+f.min+'"' : '';
+    var maxAttr = f.max!==undefined ? ' max="'+f.max+'"' : '';
+    return '<div class="dpf">'
+      + '<label for="'+f.id+'">'+f.lbl+'</label>'
+      + '<div class="dprow">'
+      + '<input type="number" id="'+f.id+'" value="'+f.val+'" step="any"'+minAttr+maxAttr+' oninput="calcLive()" onblur="clampInput(this)" aria-describedby="'+f.id+'-hint">'
+      + '<span class="dpu">'+f.unit+'</span>'
+      + '</div>'
+      + '<div class="dph" id="'+f.id+'-hint">'+f.hint+'</div>'
+      + '</div>';
+  }).join('');
+
+  // Module geometry canvas injection
+  var existGeo = document.getElementById('res-geo-wrap');
+  if(curMod === 'res'){
+    if(!existGeo){
+      var wrap = document.createElement('div');
+      wrap.id = 'res-geo-wrap';
+      wrap.innerHTML = '<div class="geo-cap"><b>Top View</b><span>· Live parameter update</span></div>'
+        + '<svg id="res-geo-svg" style="display:block;width:100%;height:240px"></svg>'
+        + '<div class="geo-legend"><span><span class="sw" style="background:#cf8a2e"></span>Copper</span><span><span class="sw" style="background:#dbe6f2"></span>Substrate</span></div>';
+      var geoPanel = document.getElementById('geo-panel');
+      if(geoPanel) geoPanel.appendChild(wrap);
+    }
+  } else {
+    if(existGeo) existGeo.remove();
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   GET PARAMS
+═══════════════════════════════════════════════════════ */
+function getP(){
+  if(curMod === 'res'){
+    // gvClamp: NaN/blank -> default; valid 0 or negative -> clamp to physical minimum;
+    // also caps at a physical maximum so an entry like 300 can't sneak past the
+    // UI's min/max (0 is a legitimate user entry and must NOT be silently
+    // swapped for the default).
+    function gvClamp(id, def, min, max){
+      var v = gv2(id);
+      if(v === null || isNaN(v)) return def;
+      return Math.min(max, Math.max(min, v));
+    }
+    var W=gvClamp('dp-W',3,0.1,20), h=gvClamp('dp-h',1.6,0.1,6), er=gvClamp('dp-er',4.4,1,12);
+    var tand=gvClamp('dp-tand',0.02,0,0.05), L=gvClamp('dp-L',34.3,1,200);
+    var g=gvClamp('dp-g',0.3,0.02,5), Wf=gvClamp('dp-Wf',3,0.1,20), Lf=gvClamp('dp-Lf',10,1,50);
+    var rr = msZ0(W, h, er);
+    var Z0 = rr.Z0, eref = rr.eref;
+    // open-end correction
+    var dL = 0.412*h*(eref+0.3)/(eref-0.258)*(W/h+0.264)/(W/h+0.8);
+    var Leff = L + 2*dL;
+    var f0 = 3e8/(2*Leff*1e-3*Math.sqrt(eref))/1e9;
+    // gap capacitance
+    var eps0 = 8.854e-12;
+    var t_metal = 0.035e-3; // 35um = 1oz copper, in metres
+    // Series gap capacitance (parallel plate: strip end-faces W×t separated by gap g)
+    var Cgap = eps0*(1+er)/2*(W*1e-3)*t_metal/(g*1e-3)*1e15; // fF
+    Cgap = Math.max(0.5, Cgap);
+    // Q_ext: Matthaei/Pozar formula for series-capacitor end-coupled half-wave resonator
+    // Qext = pi / (2 * omega0 * Cg * Z0)
+    var om0 = 2*Math.PI*f0*1e9;
+    var Qe = Math.PI / (2*om0*(Cgap*1e-15)*Z0);
+    Qe = Math.max(5, Qe);
+    // Q_u from conductor + dielectric loss
+    var mu0 = 4e-7*Math.PI;
+    var Rs = Math.sqrt(Math.PI*f0*1e9*mu0/5.8e7);
+    var ac = Rs/(Z0*W*1e-3);
+    var ad = Math.PI*f0*1e9*Math.sqrt(eref)/3e8*tand;
+    var Qu = Math.max(10, Math.PI/((ac+ad)*Leff*1e-3));
+    var rFeed = msZ0(Wf, h, er);
+    return {
+      Z0:Z0, eref:eref, er:eref, erRaw:er, W:W, h:h, tand:tand,
+      L:L, Leff:Leff, dL:dL, f0:f0, g:g, Wf:Wf, Lf:Lf,
+      Cgap:Cgap, Qe:Qe, Qu:Qu, ZLr:Z0, ZLi:0, len:L, Zfeed:rFeed.Z0
+    };
+  }
+  return null;
+}
+
+/* ═══════════════════════════════════════════════════════
+   LIVE CARDS
+═══════════════════════════════════════════════════════ */
+function liveCard(lbl, val, unit, hi, col){
+  var cls = 'lvc' + (hi ? ' hi' : '');
+  var vcls = 'lvv' + (col ? ' '+col : '');
+  return '<div class="'+cls+'"><div class="lvl">'+lbl+'</div><div class="'+vcls+'">'+val+'</div><div class="lvu">'+unit+'</div></div>';
+}
+
+function calcLive(){ try{ return _calcLiveImpl(); }catch(e){ showSimError('calcLive', e); } }
+function _calcLiveImpl(){
+  var p = getP(); if(!p) return;
+
+  if(curMod === 'res'){
+    var q = deriveQuantities(p);
+    var QL = q.QL, BW = q.BW, IL = q.IL, Leq = q.Leq, Ceq = q.Ceq;
+    var calcItems = [
+      {l:'f\u2080 (from L)', v:p.f0.toFixed(4), u:'GHz', hi:true, col:'a'},
+      {l:'Z\u2080 resonator', v:p.Z0.toFixed(2), u:'\u03a9', hi:true},
+      {l:'\u03b5_r,eff', v:p.eref.toFixed(3), col:'p'},
+      {l:'\u0394L (open-end)', v:p.dL.toFixed(3), u:'mm'},
+      {l:'L_eff', v:p.Leff.toFixed(3), u:'mm'},
+      {l:'C_gap', v:p.Cgap.toFixed(2), u:'fF'},
+      {l:'L_eq', v:Leq.toFixed(3), u:'nH'}
+    ];
+    var perfItems = [
+      {l:'Q_u (unloaded)', v:p.Qu.toFixed(0), col:'g'},
+      {l:'Q_ext (gap)', v:p.Qe.toFixed(0), col:'p'},
+      {l:'Q_L (loaded)', v:QL.toFixed(1), col:'g'},
+      {l:'BW \u22123dB', v:BW.toFixed(2), u:'MHz'},
+      {l:'Ins. loss', v:IL.toFixed(2), u:'dB'}
+    ];
+    drawResGeo(p);
+    document.getElementById('dplive').innerHTML =
+      '<div class="dpsec-title">\u2461 Calculated Parameters</div>'
+      + '<div class="dpsec-grid-4">' + calcItems.map(function(it){ return liveCard(it.l, it.v, it.u||'', it.hi||false, it.col||''); }).join('') + '</div>'
+      + '<div class="dpsec-title">\u2462 Performance</div>'
+      + '<div class="dpsec-grid-4">' + perfItems.map(function(it){ return liveCard(it.l, it.v, it.u||'', it.hi||false, it.col||''); }).join('') + '</div>';
+  }
+
+  updateParamStatus();
+  refreshFieldLive();
+  updateStaleBadge();
+}
+
+// updateParamStatus: presentation-only helper. Compares each raw field value
+// against the physically-clamped value getP() actually used, so the banner
+// tells the student when an entry (e.g. a negative or zero geometry value)
+// was pinned to a valid physical minimum rather than silently accepted.
+function updateParamStatus(){
+  var el = document.getElementById('param-status');
+  if(!el || curMod !== 'res') return;
+  var checks = [
+    ['dp-W',0.1,20], ['dp-h',0.1,6], ['dp-er',1,12], ['dp-tand',0,0.05],
+    ['dp-L',1,200], ['dp-g',0.02,5], ['dp-Wf',0.1,20], ['dp-Lf',1,50]
+  ];
+  var adjusted = checks.some(function(c){
+    var v = gv2(c[0]);
+    if(v === null || isNaN(v)) return false;
+    return Math.min(c[2], Math.max(c[1], v)) !== v;
+  });
+  if(adjusted){
+    el.className = 'warn';
+    el.textContent = 'One or more values were adjusted to the nearest valid physical range.';
+  } else {
+    el.className = '';
+    el.textContent = 'All parameters are within valid range.';
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   RESONATOR GEOMETRY CANVAS
+═══════════════════════════════════════════════════════ */
+function drawResGeo(p){
+  var svg = document.getElementById('res-geo-svg');
+  if(!svg) return;
+  var CW = svg.parentElement.clientWidth || 700;
+  var CH = 240;
+  var NS='http://www.w3.org/2000/svg';
+  svg.setAttribute('viewBox','0 0 '+CW+' '+CH);
+  svg.setAttribute('preserveAspectRatio','xMidYMid meet');
+  svg.innerHTML='';
+
+  function el(tag, attrs, txt){
+    var e = document.createElementNS(NS, tag);
+    for(var k in attrs) e.setAttribute(k, attrs[k]);
+    if(txt!==undefined) e.textContent = txt;
+    svg.appendChild(e);
+    return e;
+  }
+
+  // ── palette (light engineering-diagram theme) ──
+  var cSubstrate='#e9f0f8', cSubstrateEdge='#c3d2e4';
+  var cDim='#2f6fb0', cDimTxt='#3a4a63';
+  var cPort='#42536e', cMuted='#93a0b5';
+
+  var mX=64, mXR=118, tW=CW-mX-mXR;
+
+  // ── single consistent scale for the whole horizontal layout, derived
+  //    directly from total physical length (2×Lf + 2×g + L), so changing L
+  //    (or Lf/g) genuinely changes the drawn proportions instead of the
+  //    resonator just filling whatever pixels happen to be left over. Small
+  //    segments (like a 0.02mm gap) still get a visibility floor, and large
+  //    ones a ceiling, so the drawing never breaks — but both floor and
+  //    ceiling are applied to the SAME physical-to-pixel scale, not
+  //    independent arbitrary multipliers per segment. ──
+  var totalPhys = 2*p.Lf + 2*p.g + p.L;
+  var hScale = tW / Math.max(totalPhys, 1e-6);
+  var gW = Math.min(tW*0.08, Math.max(6, p.g*hScale));
+  var lfW = Math.min(tW*0.28, Math.max(20, p.Lf*hScale));
+  var resW = Math.max(30, tW - 2*lfW - 2*gW);
+
+  // ── single consistent vertical scale for W and Wf so equal physical
+  //    widths are guaranteed to render as visually equal, and different
+  //    widths are guaranteed to be visually distinguishable. ──
+  var vScale = 9;
+  var strH = Math.min(70, Math.max(14, p.W*vScale));
+  var feedH = Math.min(70, Math.max(14, p.Wf*vScale));
+  var cy=CH*0.52, resY=cy-strH/2, feedY=cy-feedH/2;
+  var x0=mX, xg1=x0+lfW, xr0=xg1+gW, xr1=xr0+resW, xg2=xr1, xg2e=xg2+gW, x1=xg2e+lfW;
+
+  // ── defs: copper gradient + soft drop-shadows (vector, stays crisp at any zoom) ──
+  var defs = document.createElementNS(NS,'defs'); svg.appendChild(defs);
+  var grad = document.createElementNS(NS,'linearGradient');
+  grad.setAttribute('id','geoCopperGrad'); grad.setAttribute('x1','0'); grad.setAttribute('y1','0'); grad.setAttribute('x2','0'); grad.setAttribute('y2','1');
+  var st1=document.createElementNS(NS,'stop'); st1.setAttribute('offset','0%'); st1.setAttribute('stop-color','#f0b355'); grad.appendChild(st1);
+  var st2=document.createElementNS(NS,'stop'); st2.setAttribute('offset','100%'); st2.setAttribute('stop-color','#c67f1e'); grad.appendChild(st2);
+  defs.appendChild(grad);
+  function mkShadow(id,blur,dy){
+    var f=document.createElementNS(NS,'filter'); f.setAttribute('id',id);
+    f.setAttribute('x','-40%'); f.setAttribute('y','-40%'); f.setAttribute('width','180%'); f.setAttribute('height','180%');
+    var fe=document.createElementNS(NS,'feDropShadow');
+    fe.setAttribute('dx','0'); fe.setAttribute('dy',dy); fe.setAttribute('stdDeviation',blur);
+    fe.setAttribute('flood-color','#5a3c0a'); fe.setAttribute('flood-opacity','0.28');
+    f.appendChild(fe); defs.appendChild(f);
+  }
+  mkShadow('geoCopperShadow',2.5,'2'); mkShadow('geoBoardShadow',5,'3');
+
+  function copperRect(x,y,w,h,r){
+    el('rect',{x:x,y:y,width:w,height:h,rx:r,ry:r,fill:'url(#geoCopperGrad)',filter:'url(#geoCopperShadow)'});
+    el('rect',{x:x,y:y,width:w,height:h,rx:r,ry:r,fill:'none',stroke:'#8f5c12','stroke-width':1.4});
+  }
+
+  // ── substrate board ──
+  var padX=26, padY=30, sH=Math.max(strH,feedH)+padY*2, sY=cy-sH/2;
+  el('rect',{x:x0-padX,y:sY,width:x1-x0+padX*2,height:sH,rx:10,ry:10,fill:cSubstrate,filter:'url(#geoBoardShadow)'});
+  el('rect',{x:x0-padX,y:sY,width:x1-x0+padX*2,height:sH,rx:10,ry:10,fill:'none',stroke:cSubstrateEdge,'stroke-width':1});
+
+  // ── feed lines (copper) ──
+  copperRect(x0,feedY,lfW,feedH,3);
+  copperRect(xg2e,feedY,lfW,feedH,3);
+
+  // ── coupling gaps: dark slot + capacitor-plate glyph ──
+  [xg1,xg2].forEach(function(gx){
+    el('rect',{x:gx,y:resY-4,width:gW,height:strH+8,fill:'rgba(30,45,70,0.10)'});
+    el('line',{x1:gx+gW*0.32,y1:cy-strH*0.4,x2:gx+gW*0.32,y2:cy+strH*0.4,stroke:cDim,'stroke-width':1.6});
+    el('line',{x1:gx+gW*0.68,y1:cy-strH*0.4,x2:gx+gW*0.68,y2:cy+strH*0.4,stroke:cDim,'stroke-width':1.6});
+  });
+
+  // ── resonator body (copper) ──
+  copperRect(xr0,resY,resW,strH,4);
+
+  // ── λ/2 educational note ──
+  el('text',{x:(xr0+xr1)/2,y:sY+sH+20,'text-anchor':'middle','font-family':'Georgia, serif','font-style':'italic','font-size':'11',fill:cMuted},'L \u2248 \u03bbg / 2');
+
+  // ── dimension lines ──
+  function dim(xa,xb,y,lbl){
+    el('line',{x1:xa,y1:y,x2:xb,y2:y,stroke:cDim,'stroke-width':0.9});
+    [xa,xb].forEach(function(xd){ el('line',{x1:xd,y1:y-3,x2:xd,y2:y+3,stroke:cDim,'stroke-width':0.9}); });
+    el('text',{x:(xa+xb)/2,y:y-5,'text-anchor':'middle','font-family':'Consolas, monospace','font-size':'10',fill:cDimTxt},lbl);
+  }
+  var aY = sY-16;
+  dim(xr0,xr1,aY,'L = '+p.L.toFixed(1)+'mm');
+  dim(x0,xg1,aY-18,'Lf = '+p.Lf+'mm'); dim(xg2e,x1,aY-18,'Lf = '+p.Lf+'mm');
+  dim(xg1,xg1+gW,aY,'g='+p.g+'mm'); dim(xg2,xg2+gW,aY,'g='+p.g+'mm');
+
+  // W dimension (right side, vertical bracket + label above the strip)
+  var wx=x1+16;
+  el('line',{x1:wx,y1:resY,x2:wx,y2:resY+strH,stroke:cDim,'stroke-width':0.9});
+  el('line',{x1:wx-3,y1:resY,x2:wx+3,y2:resY,stroke:cDim,'stroke-width':0.9});
+  el('line',{x1:wx-3,y1:resY+strH,x2:wx+3,y2:resY+strH,stroke:cDim,'stroke-width':0.9});
+  el('text',{x:wx+7,y:resY-4,'text-anchor':'start','font-family':'Consolas, monospace','font-size':'10',fill:cDimTxt},'W = '+p.W+'mm');
+
+  // Wf dimension — always shown (own vertical zone so it can never collide
+  // with the W label above, even when Wf == W).
+  var wfy0=feedY, wfy1=feedY+feedH;
+  el('line',{x1:wx,y1:wfy0,x2:wx,y2:wfy1,stroke:cDim,'stroke-width':0.9});
+  el('line',{x1:wx-3,y1:wfy0,x2:wx+3,y2:wfy0,stroke:cDim,'stroke-width':0.9});
+  el('line',{x1:wx-3,y1:wfy1,x2:wx+3,y2:wfy1,stroke:cDim,'stroke-width':0.9});
+  el('text',{x:wx+7,y:wfy1+13,'text-anchor':'start','font-family':'Consolas, monospace','font-size':'10',fill:cDimTxt},'Wf = '+p.Wf+'mm');
+
+  // ── port labels ──
+  el('text',{x:x0+lfW/2,y:sY-9,'text-anchor':'middle','font-family':'Consolas, monospace','font-size':'11','font-weight':'700',fill:cPort},'Port 1');
+  el('text',{x:xg2e+lfW/2,y:sY-9,'text-anchor':'middle','font-family':'Consolas, monospace','font-size':'11','font-weight':'700',fill:cPort},'Port 2');
+  el('text',{x:x0+lfW/2,y:sY+sH+20,'text-anchor':'middle','font-family':'Consolas, monospace','font-size':'9.5',fill:cMuted},'50\u03a9 ref.');
+  el('text',{x:xg2e+lfW/2,y:sY+sH+20,'text-anchor':'middle','font-family':'Consolas, monospace','font-size':'9.5',fill:cMuted},'50\u03a9 ref.');
+}
+
+/* ═══════════════════════════════════════════════════════
+   S-PARAMETER SIMULATION
+═══════════════════════════════════════════════════════ */
+function statCard(lbl,val,unit,col){
+  var vc = 'stv'+(col?' '+col:'');
+  return '<div class="st"><div class="stl">'+lbl+'</div><div class="'+vc+'">'+val+'</div><div class="stu">'+unit+'</div></div>';
+}
+
+function runSparam(){ try{ return _runSparamImpl(); }catch(e){ showSimError('S-Parameter simulation', e); } }
+function _runSparamImpl(){
+  var p = getP(); if(!p) return;
+  var _fr = getFreqRange(); fdFmin = _fr.min; fdFmax = _fr.max;
+  var npts = Math.max(51,gv('fpts')||201);
+  var freqs = Array.from({length:npts},function(_,k){return fdFmin+k*(fdFmax-fdFmin)/(npts-1);});
+  var c = 3e8;
+
+  if(curMod === 'res'){
+    var Qu=p.Qu, Qe=p.Qe, QL=1/(1/Qu+2/Qe);
+    var S21=[],S11=[],GD=[],locus=[],S11ph=[];
+    freqs.forEach(function(fi){
+      var d=(fi-p.f0)/p.f0, D=1+(2*QL*d)*(2*QL*d);
+      var s21m=QL/Qe/Math.sqrt(D);
+      var s11r=1-2*QL/Qe/D, s11i=2*QL/Qe*(2*QL*d)/D;
+      S21.push(20*Math.log10(Math.max(s21m,1e-12)));
+      S11.push(20*Math.log10(Math.max(Math.sqrt(s11r*s11r+s11i*s11i),1e-12)));
+      GD.push((QL/(Math.PI*p.f0))/(1+(2*QL*d)*(2*QL*d)));
+      locus.push([s11r, s11i]);
+      // S11 phase (deg): direct atan2 of the reflection coefficient already
+      // computed above — a display-only coordinate transform, not a new
+      // physical quantity or formula.
+      S11ph.push(Math.atan2(s11i, s11r)*180/Math.PI);
+    });
+    var q = deriveQuantities(p);
+    var IL=q.IL, Leq=q.Leq, Ceq=q.Ceq;
+    var Req=p.Z0/Qu;
+    document.getElementById('sp-sub').textContent='f0='+p.f0.toFixed(4)+'GHz | L='+p.L+'mm | g='+p.g+'mm | Qu='+Qu.toFixed(0)+' | Qe='+Qe.toFixed(0)+' | QL='+QL.toFixed(1)+' | BW='+(p.f0/QL*1e3).toFixed(1)+'MHz';
+    var st='<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:7px">';
+    st+=statCard('f\u2080',p.f0.toFixed(4),'GHz','a')+statCard('Q_u',Qu.toFixed(0),'','g')+statCard('Q_L',QL.toFixed(1),'','g')+statCard('BW -3dB',(p.f0/QL*1e3).toFixed(1),'MHz','')+statCard('Ins.loss',IL.toFixed(2),'dB','r');
+    st+=statCard('C_gap',p.Cgap.toFixed(2),'fF','p')+statCard('L_eq',Leq.toFixed(3),'nH','')+statCard('C_eq',Ceq.toFixed(1),'fF','')+statCard('R_eq',Req.toFixed(4),'\u03a9','')+statCard('L_eff',p.Leff.toFixed(3),'mm','');
+    st+='</div>';
+    document.getElementById('sp-stats').innerHTML=st;
+    var cl=cOpts('Frequency (GHz)','dB');
+    cl.scales.y.suggestedMin=-40; cl.scales.y.suggestedMax=5;
+    // f0 marker: highlight the swept point closest to resonance with a larger dot
+    // on every trace (no annotation plugin is loaded, so per-point styling is used).
+    var idx0=0, best0=1e18;
+    freqs.forEach(function(fi,i){ var dd=Math.abs(fi-p.f0); if(dd<best0){best0=dd; idx0=i;} });
+    function markerRadii(n,hi){ return Array.from({length:n},function(_,i){return i===idx0?hi:0;}); }
+    function markerColors(n,c){ return Array.from({length:n},function(_,i){return i===idx0?c:'transparent';}); }
+    mkC('ch-s11',{type:'line',data:{labels:freqs.map(function(v){return v.toFixed(3);}),datasets:[
+      {label:'|S21| dB',data:S21,borderColor:'#38bdf8',borderWidth:2,pointRadius:markerRadii(S21.length,6),
+       pointBackgroundColor:markerColors(S21.length,'#fbbf24'),pointBorderColor:'#030710',pointBorderWidth:1.5,tension:.2,fill:true,backgroundColor:'rgba(56,189,248,.05)'},
+      {label:'|S11| dB',data:S11,borderColor:'#f87171',borderWidth:1.5,pointRadius:markerRadii(S11.length,6),
+       pointBackgroundColor:markerColors(S11.length,'#fbbf24'),pointBorderColor:'#030710',pointBorderWidth:1.5,tension:.2,borderDash:[4,3]}
+    ]},options:cl});
+    var _h=document.getElementById('h4-vswr'); if(_h)_h.textContent='Group Delay (ns)';
+    mkC('ch-vswr',{type:'line',data:{labels:freqs.map(function(v){return v.toFixed(3);}),datasets:[
+      {label:'Group delay (ns)',data:GD,borderColor:'#a78bfa',borderWidth:2,pointRadius:markerRadii(GD.length,6),
+       pointBackgroundColor:markerColors(GD.length,'#fbbf24'),pointBorderColor:'#030710',pointBorderWidth:1.5,tension:.2}
+    ]},options:cOpts('Frequency (GHz)','\u03c4_g (ns)')});
+    mkC('ch-s11ph',{type:'line',data:{labels:freqs.map(function(v){return v.toFixed(3);}),datasets:[
+      {label:'\u2220S11 (deg)',data:S11ph,borderColor:'#6d4dc7',borderWidth:2,pointRadius:markerRadii(S11ph.length,6),
+       pointBackgroundColor:markerColors(S11ph.length,'#fbbf24'),pointBorderColor:'#ffffff',pointBorderWidth:1.5,tension:.2}
+    ]},options:cOpts('Frequency (GHz)','Phase (\u00b0)')});
+    var zArr=Array.from({length:60},function(_,k){return (k/59*p.L).toFixed(1);});
+    mkC('ch-sw',{type:'line',data:{labels:zArr,datasets:[
+      {label:'|V(z)| at f0',data:zArr.map(function(_,k){return Math.abs(Math.sin(Math.PI*k/59));}),borderColor:'#34d399',borderWidth:2,pointRadius:0,tension:.3,fill:true,backgroundColor:'rgba(52,211,153,.05)'}
+    ]},options:cOpts('z (mm)','|V| norm.')});
+    drawEquivCircuit('res',{Req:Req,Leq:Leq,Ceq:Ceq,Cgap:p.Cgap,f0:p.f0,Qu:Qu,QL:QL});
+    drawSmith(locus, locus[idx0], null);
+    var interp = document.getElementById('interp-text');
+    if(interp){
+      interp.textContent = 'Resonant frequency occurs at '+p.f0.toFixed(3)+' GHz, where |S\u2081\u2081| reaches its minimum ('
+        +S11[idx0].toFixed(2)+' dB) and the resonator presents a loaded Q of '+QL.toFixed(1)+' with a 3 dB bandwidth of '
+        +(p.f0/QL*1e3).toFixed(1)+' MHz \u2014 consistent with a half-wave (\u03bb/2) resonant mode.';
+    }
+    showRP('rp-sp');
+    lastRunSig = paramSignature();
+    updateStaleBadge();
+    return;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   FIELD DISTRIBUTION
+═══════════════════════════════════════════════════════ */
+function runField(){ try{ return _runFieldImpl(); }catch(e){ showSimError('Field Distribution simulation', e); } }
+function _runFieldImpl(){
+  var p = getP(); if(!p) return;
+  var _fr = getFreqRange(); fdFmin = _fr.min; fdFmax = _fr.max;
+  fdParams = p;
+  document.getElementById('fd-endmin').textContent = fdFmin.toFixed(2)+' GHz';
+  document.getElementById('fd-endmax').textContent = fdFmax.toFixed(2)+' GHz';
+  document.getElementById('fd-f0-val').textContent = 'f\u2080 = '+p.f0.toFixed(3)+' GHz';
+  // Start the slider at the resonator's own calculated f0 (not the sweep
+  // midpoint) so the student first sees the field pattern at resonance.
+  var pct0 = Math.min(100, Math.max(0, (p.f0-fdFmin)/(fdFmax-fdFmin)*100));
+  document.getElementById('fdrng').value = pct0;
+  showRP('rp-fd');
+  drawField(p.f0, p);
+}
+
+// refreshFieldLive: keeps the Field Distribution panel live, the same way
+// Live Geometry redraws on every keystroke — no "Run" button needed. Unlike
+// _runFieldImpl() (used once, on load, to pick the initial f0 slider
+// position) this preserves whatever frequency the student currently has
+// the slider on, and just redraws with the latest p/amp at that frequency.
+function refreshFieldLive(){
+  if(curMod !== 'res') return;
+  var p = getP(); if(!p) return;
+  fdParams = p;
+  var f0el = document.getElementById('fd-f0-val');
+  if(f0el) f0el.textContent = 'f\u2080 = '+p.f0.toFixed(3)+' GHz';
+  var rng = document.getElementById('fdrng');
+  if(!rng) return;
+  var f = fdFmin + (fdFmax-fdFmin)*(rng.value/100);
+  drawField(f, p);
+}
+
+// setFieldMode: pure presentation toggle between Electric-field and
+// Magnetic-field views. Redraws at whatever frequency the slider currently
+// shows using the same drawField()/physics — no new calculation involved.
+function setFieldMode(mode){
+  fieldMode = mode;
+  var eBtn=document.getElementById('fm-E'), hBtn=document.getElementById('fm-H');
+  if(eBtn){ eBtn.classList.toggle('on', mode==='E'); eBtn.setAttribute('aria-selected', mode==='E'); }
+  if(hBtn){ hBtn.classList.toggle('on', mode==='H'); hBtn.setAttribute('aria-selected', mode==='H'); }
+  var legEl=document.getElementById('fd-legend-title'), barEl=document.getElementById('fd-colorbar'), barLblEl=document.getElementById('fd-colorbar-labels');
+  if(mode==='E'){
+    if(legEl) legEl.textContent='E-field Magnitude (|E|)';
+    if(barEl) barEl.style.display='';
+    if(barLblEl) barLblEl.style.display='';
+    var hNote=document.getElementById('fd-h-note'); if(hNote) hNote.style.display='none';
+  } else {
+    if(legEl) legEl.textContent='H-field / Current Loops';
+    if(barEl) barEl.style.display='none';
+    if(barLblEl) barLblEl.style.display='none';
+    var hNote2=document.getElementById('fd-h-note'); if(hNote2) hNote2.style.display='';
+  }
+  var p = fdParams && fdParams.f0 ? fdParams : getP();
+  if(!p) return;
+  var rng = document.getElementById('fdrng');
+  var f = fdFmin + (fdFmax-fdFmin)*(rng.value/100);
+  drawField(f, p);
+}
+
+document.getElementById('fdrng').addEventListener('input', function(){
+  var p = fdParams && fdParams.f0 ? fdParams : getP();
+  if(!p) return;
+  var f = fdFmin + (fdFmax-fdFmin)*(this.value/100);
+  drawField(f, p);
+});
+
+function drawField(fGHz, p){
+  document.getElementById('fdfreq').textContent = fGHz.toFixed(3)+' GHz';
+  var svg = document.getElementById('fdcvs');
+  var wrap = document.getElementById('fdwrap');
+  var CW = wrap.clientWidth||800, CH = wrap.clientHeight||170;
+  var NS='http://www.w3.org/2000/svg';
+  svg.setAttribute('viewBox','0 0 '+CW+' '+CH);
+  svg.setAttribute('preserveAspectRatio','xMidYMid meet');
+  svg.innerHTML = '';
+
+  if(curMod !== 'res') return;
+
+  function el(tag, attrs, txt){
+    var e = document.createElementNS(NS, tag);
+    for(var k in attrs) e.setAttribute(k, attrs[k]);
+    if(txt!==undefined) e.textContent = txt;
+    svg.appendChild(e);
+    return e;
+  }
+
+  // \u2500\u2500 unchanged physics: same resonance model used by the S-Parameter
+  //    sweep (QL from Qu/Qe, Lorentzian amplitude vs detuning). This is the
+  //    single source of "how strong is the field at this frequency". \u2500\u2500
+  var Qu=p.Qu, Qe=p.Qe, QL=1/(1/Qu+2/Qe);
+  var delta=(fGHz-p.f0)/p.f0, D=1+(2*QL*delta)*(2*QL*delta);
+  var amp=QL/Qe/Math.sqrt(D); // 0..1 field amplitude at this frequency
+
+  // "At resonance" tolerance reuses the existing 3dB bandwidth (f0/QL) \u2014
+  // not a new physics quantity, just the same one shown in Results Summary.
+  var halfBW = (p.f0/QL)/2;
+  var atRes = Math.abs(fGHz-p.f0) <= halfBW;
+  var statusEl = document.getElementById('fd-resstatus');
+  if(statusEl){
+    statusEl.textContent = atRes ? 'At resonance' : 'Off resonance';
+    statusEl.classList.toggle('off', !atRes);
+  }
+  var noteEl = document.getElementById('fd-note');
+  if(noteEl){
+    noteEl.textContent = (fieldMode==='E')
+      ? 'At resonance, the E-field reaches its maximum near the centre of the \u03bb/2 resonator and approaches a minimum near the open ends.'
+      : 'Magnetic-field/current distribution follows the standing-wave behaviour of the resonator.';
+  }
+
+  // jet-style colormap (blue\u2192cyan\u2192green\u2192yellow\u2192red), t in [0,1]
+  function jet(t){
+    t=Math.max(0,Math.min(1,t));
+    var stops=[[0,0,0,170],[0.25,0,140,255],[0.5,60,220,110],[0.75,255,225,0],[1,220,20,20]];
+    for(var i=0;i<stops.length-1;i++){
+      var a=stops[i], b=stops[i+1];
+      if(t>=a[0] && t<=b[0]){
+        var f=(t-a[0])/(b[0]-a[0]||1);
+        var r=Math.round(a[1]+(b[1]-a[1])*f), g=Math.round(a[2]+(b[2]-a[2])*f), bl=Math.round(a[3]+(b[3]-a[3])*f);
+        return 'rgb('+r+','+g+','+bl+')';
+      }
+    }
+    return 'rgb(220,20,20)';
+  }
+
+  // \u2500\u2500 layout: same proportional-scale approach as Live Geometry, so the
+  //    structure genuinely reflects L/Lf/g/W/Wf rather than arbitrary
+  //    per-segment multipliers. \u2500\u2500
+  var mX=76, mXtop=26, tW=CW-mX*2;
+  var totalPhys = 2*p.Lf + 2*p.g + p.L;
+  var hScale = tW/Math.max(totalPhys,1e-6);
+  var gW = Math.min(tW*0.08, Math.max(6, p.g*hScale));
+  var lfW = Math.min(tW*0.26, Math.max(20, p.Lf*hScale));
+  var resW = Math.max(30, tW-2*lfW-2*gW);
+  var vScale=8;
+  var strH = Math.min(60, Math.max(14, p.W*vScale));
+  var feedH = Math.min(60, Math.max(12, p.Wf*vScale));
+  var cy=CH*0.62, resY=cy-strH/2, feedY=cy-feedH/2;
+  var x0=mX, xg1=x0+lfW, xr0=xg1+gW, xr1=xr0+resW, xg2=xr1, xg2e=xg2+gW, x1=xg2e+lfW;
+
+  var defs = document.createElementNS(NS,'defs'); svg.appendChild(defs);
+  var clipId = 'fdResClip';
+  var cp = document.createElementNS(NS,'clipPath'); cp.setAttribute('id',clipId);
+  var cpr = document.createElementNS(NS,'rect');
+  cpr.setAttribute('x',xr0); cpr.setAttribute('y',resY); cpr.setAttribute('width',resW); cpr.setAttribute('height',strH); cpr.setAttribute('rx',4);
+  cp.appendChild(cpr); defs.appendChild(cp);
+
+  // \u2500\u2500 dimension lines: g / L / Lf, drawn above the structure, same
+  //    engineering-arrow style as Live Geometry. \u2500\u2500
+  function dim(xa,xb,y,lbl){
+    el('line',{x1:xa,y1:y,x2:xb,y2:y,stroke:'#2f6fb0','stroke-width':0.9});
+    [xa,xb].forEach(function(xd){ el('line',{x1:xd,y1:y-3,x2:xd,y2:y+3,stroke:'#2f6fb0','stroke-width':0.9}); });
+    el('text',{x:(xa+xb)/2,y:y-4,'text-anchor':'middle','font-family':'Consolas, monospace','font-size':'9.5',fill:'#3a4a63'},lbl);
+  }
+  var dimY = mXtop+14;
+  dim(xr0,xr1,dimY,'L = '+p.L.toFixed(1)+'mm');
+  dim(x0,xg1,dimY-16,'Lf = '+p.Lf+'mm'); dim(xg2e,x1,dimY-16,'Lf = '+p.Lf+'mm');
+  dim(xg1,xg1+gW,dimY,'g='+p.g+'mm'); dim(xg2,xg2+gW,dimY,'g='+p.g+'mm');
+
+  // \u2500\u2500 feed lines (light-theme copper, same palette as Live Geometry) \u2500\u2500
+  [[x0,lfW],[xg2e,lfW]].forEach(function(a){
+    el('rect',{x:a[0],y:feedY,width:a[1],height:feedH,rx:3,fill:'#e3a13d',stroke:'#a8701c','stroke-width':1.2});
+  });
+  el('text',{x:x0+lfW/2,y:feedY-8,'text-anchor':'middle','font-family':'Consolas, monospace','font-size':'10.5','font-weight':'700',fill:'#42536e'},'Port 1');
+  el('text',{x:xg2e+lfW/2,y:feedY-8,'text-anchor':'middle','font-family':'Consolas, monospace','font-size':'10.5','font-weight':'700',fill:'#42536e'},'Port 2');
+  el('text',{x:x0+lfW/2,y:feedY+feedH+16,'text-anchor':'middle','font-family':'Consolas, monospace','font-size':'9',fill:'#93a0b5'},'50\u03a9 ref.');
+  el('text',{x:xg2e+lfW/2,y:feedY+feedH+16,'text-anchor':'middle','font-family':'Consolas, monospace','font-size':'9',fill:'#93a0b5'},'50\u03a9 ref.');
+
+  // W / Wf dimension (right side, vertical, same shared-scale idea as Live Geometry)
+  var wx=x1+16;
+  el('line',{x1:wx,y1:resY,x2:wx,y2:resY+strH,stroke:'#2f6fb0','stroke-width':0.9});
+  el('line',{x1:wx-3,y1:resY,x2:wx+3,y2:resY,stroke:'#2f6fb0','stroke-width':0.9});
+  el('line',{x1:wx-3,y1:resY+strH,x2:wx+3,y2:resY+strH,stroke:'#2f6fb0','stroke-width':0.9});
+  el('text',{x:wx+6,y:resY-2,'text-anchor':'start','font-family':'Consolas, monospace','font-size':'9.5',fill:'#3a4a63'},'W = '+p.W+'mm');
+  var wfy0=feedY, wfy1=feedY+feedH;
+  el('line',{x1:wx,y1:wfy0,x2:wx,y2:wfy1,stroke:'#2f6fb0','stroke-width':0.9});
+  el('line',{x1:wx-3,y1:wfy0,x2:wx+3,y2:wfy0,stroke:'#2f6fb0','stroke-width':0.9});
+  el('line',{x1:wx-3,y1:wfy1,x2:wx+3,y2:wfy1,stroke:'#2f6fb0','stroke-width':0.9});
+  el('text',{x:wx+6,y:wfy1+15,'text-anchor':'start','font-family':'Consolas, monospace','font-size':'9.5',fill:'#3a4a63'},'Wf = '+p.Wf+'mm');
+
+  // \u2500\u2500 coupling gaps: plain physical break, no clutter \u2500\u2500
+  [xg1,xg2].forEach(function(gx){
+    el('rect',{x:gx,y:resY-6,width:gW,height:strH+12,fill:'#eef1f6'});
+  });
+
+  // \u2500\u2500 resonator body \u2500\u2500
+  el('rect',{x:xr0,y:resY,width:resW,height:strH,rx:4,fill:'#e3a13d',stroke:'#a8701c','stroke-width':1.6});
+
+  if(fieldMode === 'E'){
+    // Smooth E-field intensity overlay INSIDE the resonator, mapped through
+    // a jet colormap: weakest (blue) at the open ends, strongest (red) at
+    // the centre \u2014 the fundamental \u03bb/2 mode shape, rendered as a continuous
+    // gradient (vector strips, always crisp at any zoom) rather than
+    // discrete ticks.
+    var N=110;
+    var vivid=Math.min(1, Math.max(0.35, 0.35+amp*2.6)); // on-resonance vividness (presentation-only; amp itself is unchanged)
+    var grp = el('g',{'clip-path':'url(#'+clipId+')'});
+    for(var i=0;i<N;i++){
+      var fr=(i+0.5)/N, xw=xr0+fr*resW, segW=resW/N+0.8;
+      var shape=Math.sin(Math.PI*fr); // pure spatial envelope, always full contrast so the pattern reads clearly regardless of coupling strength
+      var opv = 0.22+shape*0.15+(vivid-0.35)*0.55;
+      var r=document.createElementNS(NS,'rect');
+      r.setAttribute('x',xw-segW/2); r.setAttribute('y',resY); r.setAttribute('width',segW); r.setAttribute('height',strH);
+      r.setAttribute('fill',jet(shape)); r.setAttribute('opacity',opv.toFixed(3));
+      grp.appendChild(r);
+    }
+    el('rect',{x:xr0,y:resY,width:resW,height:strH,rx:4,fill:'none',stroke:'#a8701c','stroke-width':1.6});
+    // centre marker + annotation
+    var midX=(xr0+xr1)/2;
+    el('line',{x1:midX,y1:resY+strH+8,x2:midX,y2:resY+strH,stroke:'#164a87','stroke-width':1,'stroke-dasharray':'3,2'});
+    el('text',{x:midX,y:resY+strH+21,'text-anchor':'middle','font-family':'Segoe UI, sans-serif','font-size':'10.5','font-weight':'600',fill:'#164a87'},'E-field maximum');
+  } else {
+    // Magnetic field: a small number of clean current loops, symmetric,
+    // sized by the same standing-wave current profile used elsewhere
+    // (max near the ends of an open-open \u03bb/2 line, zero at centre).
+    var loops=5;
+    for(var hi=0; hi<loops; hi++){
+      var fr2=(hi+0.5)/loops, xh=xr0+fr2*resW;
+      var shapeI=Math.abs(Math.cos(Math.PI*fr2));
+      var rx=8+shapeI*22*Math.max(0.25,amp);
+      var op2=0.35+shapeI*0.55*Math.max(0.3,amp);
+      var col='rgba(109,77,199,'+op2.toFixed(3)+')';
+      el('ellipse',{cx:xh,cy:resY+strH/2,rx:rx,ry:strH*0.62,fill:'none',stroke:col,'stroke-width':1.8});
+      var ex=xh+rx, ey=resY+strH/2;
+      el('path',{d:'M '+ex+' '+ey+' L '+(ex-5)+' '+(ey-4)+' L '+(ex-5)+' '+(ey+4)+' Z', fill:col});
+    }
+  }
+}/* ═══════════════════════════════════════════════════════
+   SMITH CHART
+═══════════════════════════════════════════════════════ */
+function drawSmith(locus, op, ZLg){
+  var svg = document.getElementById('smithsvg');
+  svg.setAttribute('viewBox','0 0 300 300'); svg.style.height='220px';
+  svg.innerHTML = '';
+  var NS='http://www.w3.org/2000/svg', cx=150, cy=150, R=135;
+  var ts=function(gr,gi){return {x:cx+gr*R, y:cy-gi*R};};
+
+  var defs=document.createElementNS(NS,'defs');
+  var cp=document.createElementNS(NS,'clipPath'); cp.setAttribute('id','sc');
+  var cc=document.createElementNS(NS,'circle'); cc.setAttribute('cx',cx); cc.setAttribute('cy',cy); cc.setAttribute('r',R+1);
+  cp.appendChild(cc); defs.appendChild(cp); svg.appendChild(defs);
+
+  var bg=document.createElementNS(NS,'circle');
+  bg.setAttribute('cx',cx); bg.setAttribute('cy',cy); bg.setAttribute('r',R); bg.setAttribute('fill','#ffffff'); svg.appendChild(bg);
+
+  [0,0.2,0.5,1,2,5].forEach(function(r){
+    var cr=R/(r+1), cxr=cx+R-cr;
+    var el=document.createElementNS(NS,'circle');
+    el.setAttribute('cx',cxr); el.setAttribute('cy',cy); el.setAttribute('r',cr);
+    el.setAttribute('fill','none'); el.setAttribute('stroke','#d7deea'); el.setAttribute('stroke-width','0.8');
+    el.setAttribute('clip-path','url(#sc)'); svg.appendChild(el);
+    if(r>0){var t=document.createElementNS(NS,'text');t.setAttribute('x',cxr+cr-2);t.setAttribute('y',cy-3);t.setAttribute('fill','#8996ac');t.setAttribute('font-size','8');t.setAttribute('text-anchor','end');t.setAttribute('font-family','Courier New');t.textContent=r;svg.appendChild(t);}
+  });
+  [0.2,0.5,1,2,5,-0.2,-0.5,-1,-2,-5].forEach(function(x){
+    var cr=R/Math.abs(x), cyr=cy-Math.sign(x)*cr;
+    var el=document.createElementNS(NS,'circle');
+    el.setAttribute('cx',cx+R); el.setAttribute('cy',cyr.toFixed(1)); el.setAttribute('r',cr.toFixed(1));
+    el.setAttribute('fill','none'); el.setAttribute('stroke','#d7deea'); el.setAttribute('stroke-width','0.5');
+    el.setAttribute('clip-path','url(#sc)'); svg.appendChild(el);
+  });
+  var ax=document.createElementNS(NS,'line');
+  ax.setAttribute('x1',cx-R); ax.setAttribute('y1',cy); ax.setAttribute('x2',cx+R); ax.setAttribute('y2',cy);
+  ax.setAttribute('stroke','#c7d0de'); ax.setAttribute('stroke-width','0.6'); svg.appendChild(ax);
+  var uc=document.createElementNS(NS,'circle');
+  uc.setAttribute('cx',cx); uc.setAttribute('cy',cy); uc.setAttribute('r',R);
+  uc.setAttribute('fill','none'); uc.setAttribute('stroke','#aab4c6'); uc.setAttribute('stroke-width','1.5'); svg.appendChild(uc);
+
+  if(locus&&locus.length>1){
+    var d=locus.map(function(pt,i){var p2=ts(pt[0],pt[1]);return(i===0?'M':'L')+p2.x.toFixed(1)+','+p2.y.toFixed(1);}).join(' ');
+    var pe=document.createElementNS(NS,'path');
+    pe.setAttribute('d',d); pe.setAttribute('fill','none'); pe.setAttribute('stroke','#6d4dc7'); pe.setAttribute('stroke-width','2.2'); pe.setAttribute('opacity','0.85'); svg.appendChild(pe);
+  }
+  function dot(gr,gi,fill,lbl){
+    if(Math.abs(gr)>1.05||Math.abs(gi)>1.05)return;
+    var pt=ts(gr,gi);
+    var c2=document.createElementNS(NS,'circle');
+    c2.setAttribute('cx',pt.x.toFixed(1)); c2.setAttribute('cy',pt.y.toFixed(1));
+    c2.setAttribute('r','7'); c2.setAttribute('fill',fill); c2.setAttribute('stroke','#ffffff'); c2.setAttribute('stroke-width','2'); svg.appendChild(c2);
+    var t=document.createElementNS(NS,'text');
+    t.setAttribute('x',(pt.x+10).toFixed(0)); t.setAttribute('y',(pt.y+4).toFixed(0));
+    t.setAttribute('fill',fill); t.setAttribute('font-size','9'); t.setAttribute('font-weight','700'); t.setAttribute('font-family','Courier New'); t.textContent=lbl; svg.appendChild(t);
+  }
+  if(ZLg) dot(ZLg[0],ZLg[1],'#b5750a','ZL');
+  if(op) dot(op[0],op[1],'#1d5da8','Zin @ f\u2080');
+  var lt=document.createElementNS(NS,'text');
+  lt.setAttribute('x',cx); lt.setAttribute('y',cy+R+13); lt.setAttribute('text-anchor','middle');
+  lt.setAttribute('fill','#63708a'); lt.setAttribute('font-size','8'); lt.setAttribute('font-family','Courier New');
+  lt.textContent = ZLg
+    ? '\u25cf ZL (amber)  \u25cf Zin (blue)  \u2014 locus (purple)'
+    : '\u25cf Zin @ f\u2080 (blue)  \u2014 \u0393(f) locus (purple)';
+  svg.appendChild(lt);
+}
+
+
+/* ═══════════════════════════════════════════════════════
+   EQUIVALENT CIRCUIT DRAWING
+   Draws a complete labeled schematic with computed values
+═══════════════════════════════════════════════════════ */
+function drawEquivCircuit(mode, params){
+  var svg = document.getElementById('equiv-svg');
+  var valsDiv = document.getElementById('equiv-vals');
+  if(!svg) return;
+  svg.innerHTML = '';
+  var NS = 'http://www.w3.org/2000/svg';
+  function svgEl(tag, attrs, txt){
+    var e = document.createElementNS(NS, tag);
+    Object.keys(attrs).forEach(function(k){ e.setAttribute(k, attrs[k]); });
+    if(txt !== undefined) e.textContent = txt;
+    svg.appendChild(e); return e;
+  }
+  function line(x1,y1,x2,y2,col,w){ svgEl('line',{x1:x1,y1:y1,x2:x2,y2:y2,stroke:col||'#8a97ad','stroke-width':w||1.5}); }
+  function label(x,y,txt,col,sz,anchor){ svgEl('text',{x:x,y:y,fill:col||'#9aa7bd','font-size':sz||9,'text-anchor':anchor||'middle','font-family':'Courier New,monospace'},txt); }
+  function resistor(x,y,lbl,val){
+    // Zigzag resistor symbol
+    svgEl('rect',{x:x,y:y-12,width:40,height:24,rx:3,fill:'rgba(248,113,113,0.08)',stroke:'#f87171','stroke-width':1});
+    label(x+20,y+4,lbl,'#f87171',9,'middle');
+    label(x+20,y+18,val,'#f87171',8,'middle');
+  }
+  function inductor(x,y,lbl,val){
+    // Coil symbol - 4 arcs
+    var path='M'+x+','+y;
+    for(var i=0;i<4;i++){ path+=' Q'+(x+i*14+7)+','+(y-14)+' '+(x+(i+1)*14)+','+y; }
+    svgEl('path',{d:path,fill:'none',stroke:'#a78bfa','stroke-width':1.8});
+    label(x+28,y+14,lbl,'#a78bfa',9,'middle');
+    label(x+28,y+23,val,'#a78bfa',8,'middle');
+  }
+  function capacitor(x,y,lbl,val){
+    line(x,y-16,x,y-4,'#38bdf8',2.2);
+    line(x-12,y-4,x+12,y-4,'#38bdf8',2.5);
+    line(x-12,y+4,x+12,y+4,'#38bdf8',2.5);
+    line(x,y+4,x,y+16,'#38bdf8',2.2);
+    label(x+18,y,lbl,'#38bdf8',9,'start');
+    label(x+18,y+11,val,'#38bdf8',8,'start');
+  }
+  function port(x,y,lbl){
+    svgEl('circle',{cx:x,cy:y,r:5,fill:'none',stroke:'#fbbf24','stroke-width':1.5});
+    label(x,y+17,lbl,'#fbbf24',9,'middle');
+  }
+
+  if(mode === 'res'){
+    // Resonator: series RLC between ports, with coupling caps
+    var R=params.Req, L=params.Leq, C=params.Ceq, Cg=params.Cgap, f0=params.f0;
+    document.getElementById('equiv-title').textContent = '\u03bb/2 Resonator — Series RLC Equivalent (valid near f\u2080 = '+f0.toFixed(4)+' GHz)';
+    var sy=65;
+    port(18,sy,'P1'); line(23,sy,55,sy,'#334155');
+    // Left coupling cap Cg
+    line(55,sy,55,sy-16,'#334155',1.2);
+    line(43,sy-16,67,sy-16,'#38bdf8',2.5);
+    line(43,sy-24,67,sy-24,'#38bdf8',2.5);
+    line(55,sy-24,55,sy-38,'#334155',1.2);
+    label(78,sy-20,'C_g','#38bdf8',9,'start');
+    label(78,sy-9,Cg.toFixed(2)+'fF','#38bdf8',8,'start');
+    line(55,sy-38,120,sy-38,'#334155');
+    // Series R
+    resistor(120,sy-50,'R_eq',R.toFixed(4)+'\u03a9');
+    line(160,sy-38,195,sy-38,'#334155');
+    // Series L
+    inductor(195,sy-38,'L_eq',L.toFixed(3)+'nH');
+    line(251,sy-38,285,sy-38,'#334155');
+    // Series C_eq
+    line(285,sy-38,285,sy-54,'#334155',1.2);
+    line(273,sy-54,297,sy-54,'#38bdf8',2.5);
+    line(273,sy-62,297,sy-62,'#38bdf8',2.5);
+    line(285,sy-62,285,sy-80,'#334155',1.2);
+    label(308,sy-58,'C_eq','#38bdf8',9,'start');
+    label(308,sy-47,C.toFixed(0)+'fF','#38bdf8',8,'start');
+    line(285,sy-80,380,sy-80,'#334155');
+    label(320,sy-90,'Resonator body (series RLC)','#334155',8,'middle');
+    // Back down
+    line(380,sy-80,380,sy-38,'#334155');
+    line(380,sy-38,430,sy-38,'#334155');
+    // Right coupling cap Cg
+    line(430,sy-38,430,sy-54,'#334155',1.2);
+    line(418,sy-54,442,sy-54,'#38bdf8',2.5);
+    line(418,sy-62,442,sy-62,'#38bdf8',2.5);
+    line(430,sy-62,430,sy-78,'#334155',1.2);
+    label(453,sy-58,'C_g','#38bdf8',9,'start');
+    label(453,sy-47,Cg.toFixed(2)+'fF','#38bdf8',8,'start');
+    line(430,sy-38,490,sy-38,'#334155');
+    line(490,sy-38,490,sy,'#334155');
+    line(490,sy,530,sy,'#334155');
+    port(535,sy,'P2');
+    // Ground rail
+    line(18,sy,18,sy+30,'#334155',0.8); line(535,sy,535,sy+30,'#334155',0.8);
+    svgEl('line',{x1:18,y1:sy+30,x2:535,y2:sy+30,stroke:'#334155','stroke-width':0.8,'stroke-dasharray':'3,3'});
+    label(276,sy+42,'Reference ground','#334155',8,'middle');
+    valsDiv.innerHTML = 'R_eq = '+R.toFixed(5)+' \u03a9 &nbsp;|&nbsp; L_eq = '+L.toFixed(3)+' nH &nbsp;|&nbsp; C_eq = '+C.toFixed(1)+' fF &nbsp;|&nbsp; C_gap = '+Cg.toFixed(2)+' fF &nbsp;|&nbsp; f\u2080 = '+f0.toFixed(4)+' GHz &nbsp;|&nbsp; Q_u = '+params.Qu.toFixed(0)+' &nbsp;|&nbsp; Q_L = '+params.QL.toFixed(1);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   PANEL MANAGEMENT
+═══════════════════════════════════════════════════════ */
+function showRP(id){
+  document.getElementById('idle').style.display='none';
+  document.querySelectorAll('.rp').forEach(function(el){el.classList.remove('on');});
+  document.getElementById(id).classList.add('on');
+}
+function closeRP(id){
+  document.getElementById(id).classList.remove('on');
+  var anyOn=document.querySelectorAll('.rp.on').length>0;
+  document.getElementById('idle').style.display=anyOn?'none':'flex';
+}
+function showIdle(){
+  document.querySelectorAll('.rp').forEach(function(el){el.classList.remove('on');});
+  document.getElementById('idle').style.display='flex';
+}
+
+// Keyboard accessibility: activate any role="button"/role="tab" element with
+// Enter or Space, same as a native <button>, so sidebar/tab/close controls
+// (which are styled <div>s) work for keyboard-only and screen-reader users.
+document.addEventListener('keydown', function(e){
+  if(e.key !== 'Enter' && e.key !== ' ') return;
+  var t = e.target;
+  if(!t) return;
+  var role = t.getAttribute && t.getAttribute('role');
+  if(role === 'button' || role === 'tab'){
+    e.preventDefault();
+    t.click();
+  }
+});
+
+
+window.addEventListener('load', function(){
+  openMod('res');
+  // Pre-populate the dashboard with the default parameters so it lands in a
+  // fully populated state, instead of an empty idle screen. This does not
+  // change what the Run buttons do on subsequent clicks.
+  runSparam();
+  runField();
+  showRightTab('geo');
+});
+</script>
+<script src="../assets/js/iframeResize.js"></script>
+        
+        </body>
+</html>
